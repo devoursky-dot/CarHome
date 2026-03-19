@@ -70,13 +70,21 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 우측 하단의 반투명 둥근 버튼 -->
-    <ImageView
+    <!-- 우측 하단의 반투명 둥근 버튼 (시계 기능 통합) -->
+    <TextClock
         android:id="@+id/handleBar"
-        android:layout_width="60dp"
+        android:layout_width="wrap_content"
         android:layout_height="60dp"
         android:layout_gravity="bottom|end"
         android:background="@drawable/bg_round_btn"
-        android:src="@android:drawable/ic_menu_sort_by_size"
-        android:scaleType="centerInside" />
+        android:paddingStart="16dp"
+        android:paddingEnd="20dp"
+        android:drawableStart="@android:drawable/ic_menu_sort_by_size"
+        android:drawablePadding="8dp"
+        android:format12Hour="h:mm a"
+        android:format24Hour="HH:mm"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 </FrameLayout>
