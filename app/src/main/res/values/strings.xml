@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">CarHome</string>
+    <string name="accessibility_service_description">티맵 광고 닫기 및 안심 주행 전환을 위한 자동 터치 매크로 서비스입니다.</string>
 </resources>

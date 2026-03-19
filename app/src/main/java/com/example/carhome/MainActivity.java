@@ -1,7 +1,6 @@
 package com.example.carhome;
 
 import android.annotation.SuppressLint;
-import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -11,10 +10,8 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -30,10 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -43,9 +37,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TextView tvSpeed, tvMemory, tvBattery;
-    private LocationManager locationManager;
-    private LocationListener locationListener;
+    private TextView tvMemory, tvBattery, tvAccessibility;
     private BroadcastReceiver batteryReceiver;
     private Handler statusHandler = new Handler(Looper.getMainLooper());
     private Runnable statusRunnable;
@@ -53,6 +45,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // 전원이 들어올 때 잠금 화면을 무시하고 화면을 즉시 켤 수 있도록 설정
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        }
 
         // 1. 화면 항상 켜짐 유지 - 시스템 설정(예: 15초)을 따르기 위해 주석 처리함
         // getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -102,9 +103,9 @@ public class MainActivity extends AppCompatActivity {
         setupAppIconAndClick(btnApp6, app6, "app6");
 
         // 상태 표시줄 UI 연결 및 설정
-        tvSpeed = findViewById(R.id.tvSpeed);
         tvMemory = findViewById(R.id.tvMemory);
         tvBattery = findViewById(R.id.tvBattery);
+        tvAccessibility = findViewById(R.id.tvAccessibility);
         setupStatusBar();
 
         // 권한 확인 및 플로팅 서비스 실행
@@ -123,29 +124,15 @@ public class MainActivity extends AppCompatActivity {
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
                 int batteryPct = (int) ((level / (float) scale) * 100);
-                if (tvBattery != null) tvBattery.setText("BAT: " + batteryPct + "%");
+                
+                // 전원 연결(충전) 상태 확인
+                int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
+                String chargeStr = isCharging ? " (충전중 ⚡)" : "";
+                
+                if (tvBattery != null) tvBattery.setText("BAT: " + batteryPct + "%" + chargeStr);
             }
         };
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(@NonNull Location location) {
-                if (location.hasSpeed()) {
-                    int speedKmH = (int) (location.getSpeed() * 3.6); // m/s 를 km/h 로 변환
-                    if (tvSpeed != null) tvSpeed.setText(speedKmH + " km/h");
-                } else {
-                    if (tvSpeed != null) tvSpeed.setText("0 km/h");
-                }
-            }
-            @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
-            @Override public void onProviderEnabled(@NonNull String provider) {}
-            @Override public void onProviderDisabled(@NonNull String provider) {}
-        };
-
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 100);
-        }
 
         statusRunnable = new Runnable() {
             @Override
@@ -156,7 +143,6 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
-    @SuppressLint("MissingPermission")
     @Override
     protected void onResume() {
         super.onResume();
@@ -166,11 +152,6 @@ public class MainActivity extends AppCompatActivity {
         }
         if (statusRunnable != null) {
             statusHandler.post(statusRunnable);
-        }
-        if (locationManager != null && locationListener != null) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
-            }
         }
 
         // 홈 화면에 진입할 때마다 플로팅 서비스가 살아있는지 확인하고 뷰를 초기화 (튕김 및 사라짐 100% 방지)
@@ -189,21 +170,6 @@ public class MainActivity extends AppCompatActivity {
         if (statusHandler != null && statusRunnable != null) {
             statusHandler.removeCallbacks(statusRunnable);
         }
-        if (locationManager != null && locationListener != null) {
-            locationManager.removeUpdates(locationListener);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 100 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            if (locationManager != null && locationListener != null) {
-                try {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
-                } catch (SecurityException e) { e.printStackTrace(); }
-            }
-        }
     }
 
     private void updateMemory() {
@@ -214,6 +180,17 @@ public class MainActivity extends AppCompatActivity {
         long usedMem = memoryInfo.totalMem - memoryInfo.availMem;
         int memPct = (int) ((usedMem / (double) memoryInfo.totalMem) * 100);
         if (tvMemory != null) tvMemory.setText("RAM: " + memPct + "%");
+
+        // 접근성 서비스(매크로) 연결 상태 확인 및 UI 갱신
+        if (tvAccessibility != null) {
+            if (MacroAccessibilityService.instance != null) {
+                tvAccessibility.setText("🟢");
+                tvAccessibility.setTextColor(Color.parseColor("#3DDC84")); // 안드로이드 기본 초록색
+            } else {
+                tvAccessibility.setText("🔴");
+                tvAccessibility.setTextColor(Color.parseColor("#FF5252")); // 빨간색
+            }
+        }
     }
 
     @Override
@@ -226,9 +203,6 @@ public class MainActivity extends AppCompatActivity {
         if (batteryReceiver != null) {
             try { unregisterReceiver(batteryReceiver); } catch (Exception e) {}
         }
-        if (locationManager != null && locationListener != null) {
-            locationManager.removeUpdates(locationListener);
-        }
     }
 
     // 다른 앱을 실행하는 공통 메서드
@@ -236,9 +210,36 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
             startActivity(intent);
+            
+            // 실행한 앱이 티맵일 경우 매크로 발동
+            if ("com.skt.tmap.ku".equals(packageName)) {
+                executeTmapMacro();
+            }
         } else {
             // 태블릿에 해당 앱이 설치되어 있지 않을 경우 안내 메시지
             Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 티맵 광고 닫기 및 안심 주행 자동 터치 매크로
+    private void executeTmapMacro() {
+        if (MacroAccessibilityService.instance != null) {
+            Handler handler = new Handler(Looper.getMainLooper());
+            
+            // 1. 티맵 로딩 및 광고가 뜰 때까지 넉넉하게 대기 (15초 = 15000ms)
+            handler.postDelayed(() -> {
+                MacroAccessibilityService.instance.performClick(1130f, 70f);
+                Toast.makeText(this, "매크로: 광고 닫기 터치 🤖", Toast.LENGTH_SHORT).show();
+                
+                // 2. 광고 닫기 후 1초 대기 후 안심 주행 버튼 터치
+                handler.postDelayed(() -> {
+                    MacroAccessibilityService.instance.performClick(1130f, 70f);
+                    Toast.makeText(this, "매크로: 안심 주행 진입 🤖", Toast.LENGTH_SHORT).show();
+                }, 1000);
+                
+            }, 15000);
+        } else {
+            Toast.makeText(this, "매크로 대기 중... (작동하지 않으면 설정에서 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
         }
     }
 

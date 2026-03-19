@@ -48,16 +48,6 @@
         android:layout_marginBottom="32dp">
 
         <TextView
-            android:id="@+id/tvSpeed"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0 km/h"
-            android:textColor="#00FF00"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginEnd="16dp" />
-
-        <TextView
             android:id="@+id/tvMemory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -75,7 +65,16 @@
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold"
-            />
+            android:layout_marginEnd="16dp" />
+
+        <TextView
+            android:id="@+id/tvAccessibility"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔴"
+            android:textColor="#FF5252"
+            android:textSize="18sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <!-- 세로 모드: 6개의 앱 아이콘을 2개씩 3줄(2x3) 바둑판식으로 배치 -->

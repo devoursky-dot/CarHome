@@ -4,8 +4,10 @@ import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
@@ -16,6 +18,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -42,6 +45,48 @@ public class FloatingService extends Service {
     private Handler hideHandler = new Handler(Looper.getMainLooper());
     private Runnable hideRunnable;
     private WindowManager.LayoutParams params;
+    private Handler autoLaunchHandler = new Handler(Looper.getMainLooper());
+
+    // 전원 연결 시 화면을 켜주기 위한 브로드캐스트 리시버
+    private final BroadcastReceiver powerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_POWER_CONNECTED.equals(intent.getAction())) {
+                PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                
+                // [방어 1] 이미 화면이 켜져서 사용 중이라면 케이블이 흔들려서 재연결된 것이므로 무시합니다.
+                if (pm != null && pm.isInteractive()) {
+                    return;
+                }
+                
+                if (pm != null && !pm.isInteractive()) {
+                    @SuppressWarnings("deprecation")
+                    PowerManager.WakeLock wakeLock = pm.newWakeLock(
+                            PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                            "CarHome:PowerWakeLock"
+                    );
+                    wakeLock.acquire(3000); // 3초간 강제로 화면 켜기 (이후 기기 설정 시간에 따라 꺼짐)
+                }
+                Intent mainIntent = new Intent(context, MainActivity.class);
+                mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(mainIntent);
+
+                // [방어 2] 시동 걸 때 전원이 흔들리며 여러 번 호출되는 것을 막기 위해, 기존 예약된 티맵 실행 타이머를 취소합니다.
+                autoLaunchHandler.removeCallbacksAndMessages(null);
+
+                // 홈 화면이 뜨고 나서 2초(2000ms) 뒤에 티맵 자동 실행
+                autoLaunchHandler.postDelayed(() -> {
+                    Intent tmapIntent = getPackageManager().getLaunchIntentForPackage("com.skt.tmap.ku");
+                    if (tmapIntent != null) {
+                        tmapIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(tmapIntent);
+                        Toast.makeText(context, "티맵을 자동 실행합니다 🚗", Toast.LENGTH_SHORT).show();
+                        executeTmapMacro(); // 매크로 자동 실행
+                    }
+                }, 2000);
+            }
+        }
+    };
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -164,6 +209,11 @@ public class FloatingService extends Service {
             cleanMemory();
             hideHandler.post(hideRunnable); // 청소 시작과 동시에 메뉴 숨김
         });
+
+        // 전원 연결 감지 리시버 동적 등록
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_POWER_CONNECTED);
+        registerReceiver(powerReceiver, filter);
     }
 
     // 백그라운드 앱들을 종료하여 램을 확보하는 메서드
@@ -210,8 +260,36 @@ public class FloatingService extends Service {
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+            
+            // 실행한 앱이 티맵일 경우 매크로 발동
+            if ("com.skt.tmap.ku".equals(packageName)) {
+                executeTmapMacro();
+            }
         } else {
             Toast.makeText(this, "앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 티맵 광고 닫기 및 안심 주행 자동 터치 매크로
+    private void executeTmapMacro() {
+        if (MacroAccessibilityService.instance != null) {
+            Handler handler = new Handler(Looper.getMainLooper());
+            
+            // 1. 티맵 로딩 및 광고가 뜰 때까지 넉넉하게 대기 (15초 = 15000ms 설정)
+            // 기기 속도에 맞춰 이 숫자를 조절하세요.
+            handler.postDelayed(() -> {
+                MacroAccessibilityService.instance.performClick(1130f, 70f);
+                Toast.makeText(this, "매크로: 광고 닫기 터치 🤖", Toast.LENGTH_SHORT).show();
+                
+                // 2. 광고 닫기 후 1초(1000ms) 대기 후 안심 주행 버튼 터치
+                handler.postDelayed(() -> {
+                    MacroAccessibilityService.instance.performClick(1130f, 70f);
+                    Toast.makeText(this, "매크로: 안심 주행 진입 🤖", Toast.LENGTH_SHORT).show();
+                }, 1000);
+                
+            }, 15000); 
+        } else {
+            Toast.makeText(this, "매크로 대기 중... (작동하지 않으면 설정에서 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -363,6 +441,8 @@ public class FloatingService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (autoLaunchHandler != null) autoLaunchHandler.removeCallbacksAndMessages(null);
+        if (powerReceiver != null) { try { unregisterReceiver(powerReceiver); } catch (Exception e) {} }
         if (hideHandler != null && hideRunnable != null) hideHandler.removeCallbacks(hideRunnable);
         if (floatingView != null) windowManager.removeView(floatingView);
     }
