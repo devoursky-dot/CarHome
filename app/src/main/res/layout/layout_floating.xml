@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floatingRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <!-- 실제 앱 아이콘과 시계 영역 (평소엔 숨김) -->
+    <LinearLayout
+        android:id="@+id/floatingContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#D9121212"
+        android:padding="24dp"
+        android:gravity="center"
+        android:visibility="gone">
+
+    <!-- 윗줄: 시계 -->
+    <TextClock
+        android:id="@+id/textClockFloating"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:format12Hour="hh:mm a"
+        android:format24Hour="HH:mm"
+        android:textColor="#FFFFFF"
+        android:textSize="50sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- 아랫줄: 앱 아이콘들 (가로로 균등하게 4등분 배치) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="4"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/btnFloatingTmap"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter" />
+
+        <ImageView
+            android:id="@+id/btnFloatingVideo"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter" />
+
+        <!-- 브레이브 브라우저 -->
+        <ImageView
+            android:id="@+id/btnFloatingBrave"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_weight="1"
+            android:scaleType="fitCenter" />
+
+        <!-- 램 청소 버튼 -->
+        <ImageView
+            android:id="@+id/btnFloatingClean"
+            android:layout_width="0dp"
+            android:layout_height="100dp"
+            android:layout_weight="1"
+            android:src="@android:drawable/ic_menu_delete"
+            android:scaleType="fitCenter" />
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 우측 하단의 반투명 둥근 버튼 -->
+    <ImageView
+        android:id="@+id/handleBar"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/bg_round_btn"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        android:scaleType="centerInside" />
+</FrameLayout>
