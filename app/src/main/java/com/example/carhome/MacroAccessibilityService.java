@@ -11,6 +11,7 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
 
@@ -52,6 +53,18 @@ public class MacroAccessibilityService extends AccessibilityService {
         dispatchGesture(gestureDescription, null, null);
 
         // 터치 지점에 반투명한 빨간색 원을 0.5초 동안 표시
+        showClickIndicator(x, y);
+    }
+
+    // 시스템 UI(모두 닫기 등)가 너무 빠른 터치를 무시하는 것을 방지하기 위한 '사람 손가락' 속도의 클릭
+    public void performHumanClick(float x, float y) {
+        Path path = new Path();
+        path.moveTo(x, y);
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        // 누르고 있는 시간을 100ms -> 250ms로 늘려서 확실하게 '클릭'으로 인식시킴
+        GestureDescription gestureDescription = builder.addStroke(new GestureDescription.StrokeDescription(path, 0, 250)).build();
+        dispatchGesture(gestureDescription, null, null);
+
         showClickIndicator(x, y);
     }
 
@@ -100,17 +113,34 @@ public class MacroAccessibilityService extends AccessibilityService {
         // 1. 최근 실행 앱 화면(Recents) 띄우기
         performGlobalAction(GLOBAL_ACTION_RECENTS);
 
-        // 2. 약간의 딜레이 후 '모두 닫기' 버튼 위치 터치
-        // 최근 앱 화면이 뜨는 데 시간이 걸리므로 1~2초 대기
+        // 2. 최근 앱 화면 전환 애니메이션을 고려하여 넉넉하게 2.5초(2500ms) 대기
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            // FIXME: 이 좌표(x, y)는 고객님의 기기 해상도와 '모두 닫기' 버튼 위치에 맞게 수정해야 합니다!
-            // 앞서 안내해드린 adb shell wm size 명령어로 해상도를 확인하고 대략적인 위치를 찾아보세요.
-            // 예: 하단 중앙에 있다면 (960f, 1100f) 등
-            float closeAllX = 500f; 
-            float closeAllY = 1000f; 
+            Toast.makeText(this, "매크로: '모두 닫기' 버튼 탐색 중... 🔍", Toast.LENGTH_SHORT).show();
             
-            performClick(closeAllX, closeAllY);
+            boolean clicked = false;
+            AccessibilityNodeInfo rootNode = getRootInActiveWindow();
             
-        }, 1500); // 1.5초(1500ms) 대기. 기기 속도에 따라 조절 필요
+            if (rootNode != null) {
+                // 화면 전체에서 "모두 닫기"라는 글자를 가진 버튼(노드)을 싹 다 검색합니다.
+                java.util.List<AccessibilityNodeInfo> nodes = rootNode.findAccessibilityNodeInfosByText("모두 닫기");
+                for (AccessibilityNodeInfo node : nodes) {
+                    if (node.isClickable()) {
+                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK); // 시스템 차원에서 버튼을 강제 클릭!
+                        clicked = true;
+                        break;
+                    } else if (node.getParent() != null && node.getParent().isClickable()) {
+                        node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK); // 글자의 부모 영역이 버튼인 경우
+                        clicked = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (clicked) {
+                Toast.makeText(this, "매크로: 모두 닫기 완료! ✨", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "모두 닫기 버튼을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+            }
+        }, 3500); // 1.5초 -> 2.5초로 연장
     }
 }

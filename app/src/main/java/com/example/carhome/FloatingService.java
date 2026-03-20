@@ -47,16 +47,18 @@ public class FloatingService extends Service {
     private Runnable hideRunnable;
     private WindowManager.LayoutParams params;
     private Handler autoLaunchHandler = new Handler(Looper.getMainLooper());
-    private boolean isPowerDisconnected = false; // 전원 끊김 상태 플래그
+    private Handler powerOffHandler = new Handler(Looper.getMainLooper()); // 전원 끊김 타이머용
 
     // 전원 연결 시 화면을 켜주기 위한 브로드캐스트 리시버
     private final BroadcastReceiver powerReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_POWER_CONNECTED.equals(intent.getAction())) {
+                // 전원이 다시 들어오면(방지턱 등) 예약된 모두 닫기 매크로를 즉시 취소!
+                powerOffHandler.removeCallbacksAndMessages(null);
+                
                 PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
                 
-                isPowerDisconnected = false; // 전원이 연결되면 플래그 초기화
                 // [방어 1] 이미 화면이 켜져서 사용 중이라면 케이블이 흔들려서 재연결된 것이므로 무시합니다.
                 if (pm != null && pm.isInteractive()) {
                     return;
@@ -88,13 +90,13 @@ public class FloatingService extends Service {
                     }
                 }, 2000);
             } else if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
-                isPowerDisconnected = true; // 전원이 끊어지면 플래그 설정
-            } else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
-                // 전원이 끊어진 상태에서 화면이 꺼졌을 때 한 번만 모두 닫기 매크로 실행
-                if (isPowerDisconnected) {
+                // 전원이 끊어지면 10초 뒤에 모두 닫기 매크로 실행
+                Toast.makeText(context, "전원 차단: 10초 뒤 앱을 자동 정리합니다 🧹", Toast.LENGTH_SHORT).show();
+                powerOffHandler.removeCallbacksAndMessages(null);
+                powerOffHandler.postDelayed(() -> {
                     executeCloseAllAppsMacro();
-                    isPowerDisconnected = false; // 중복 실행 방지를 위해 플래그 초기화
-                }
+                    Toast.makeText(context, "운행 종료: 모두 닫기 완료!", Toast.LENGTH_SHORT).show();
+                }, 10000); // 10초(10000ms) 대기
             }
         }
     };
@@ -225,7 +227,6 @@ public class FloatingService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_POWER_CONNECTED);
         filter.addAction(Intent.ACTION_POWER_DISCONNECTED); // 전원 끊김 감지 추가
-        filter.addAction(Intent.ACTION_SCREEN_OFF); // 화면 꺼짐 감지 추가
         registerReceiver(powerReceiver, filter);
 
         // 동적 채널 버튼 생성
@@ -514,6 +515,7 @@ public class FloatingService extends Service {
     public void onDestroy() {
         super.onDestroy();
         if (autoLaunchHandler != null) autoLaunchHandler.removeCallbacksAndMessages(null);
+        if (powerOffHandler != null) powerOffHandler.removeCallbacksAndMessages(null);
         if (powerReceiver != null) { try { unregisterReceiver(powerReceiver); } catch (Exception e) {} }
         if (hideHandler != null && hideRunnable != null) hideHandler.removeCallbacks(hideRunnable);
         if (floatingView != null) windowManager.removeView(floatingView);
