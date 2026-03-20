@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ApplicationInfo;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -46,6 +47,7 @@ public class FloatingService extends Service {
     private Runnable hideRunnable;
     private WindowManager.LayoutParams params;
     private Handler autoLaunchHandler = new Handler(Looper.getMainLooper());
+    private boolean isPowerDisconnected = false; // 전원 끊김 상태 플래그
 
     // 전원 연결 시 화면을 켜주기 위한 브로드캐스트 리시버
     private final BroadcastReceiver powerReceiver = new BroadcastReceiver() {
@@ -54,6 +56,7 @@ public class FloatingService extends Service {
             if (Intent.ACTION_POWER_CONNECTED.equals(intent.getAction())) {
                 PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
                 
+                isPowerDisconnected = false; // 전원이 연결되면 플래그 초기화
                 // [방어 1] 이미 화면이 켜져서 사용 중이라면 케이블이 흔들려서 재연결된 것이므로 무시합니다.
                 if (pm != null && pm.isInteractive()) {
                     return;
@@ -84,6 +87,14 @@ public class FloatingService extends Service {
                         executeTmapMacro(); // 매크로 자동 실행
                     }
                 }, 2000);
+            } else if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
+                isPowerDisconnected = true; // 전원이 끊어지면 플래그 설정
+            } else if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                // 전원이 끊어진 상태에서 화면이 꺼졌을 때 한 번만 모두 닫기 매크로 실행
+                if (isPowerDisconnected) {
+                    executeCloseAllAppsMacro();
+                    isPowerDisconnected = false; // 중복 실행 방지를 위해 플래그 초기화
+                }
             }
         }
     };
@@ -200,8 +211,8 @@ public class FloatingService extends Service {
         });
         
         btnBrave.setOnClickListener(v -> {
-            showYouTubeChannelDialog();
-            hideHandler.post(hideRunnable); // 채널 목록 띄우고 즉시 메뉴 숨김
+            launchApp("com.android.chrome"); // 브라우저 아이콘은 순수 브라우저 앱 실행으로 변경
+            hideHandler.post(hideRunnable);
         });
 
         // 램 청소 버튼 터치 이벤트
@@ -213,7 +224,12 @@ public class FloatingService extends Service {
         // 전원 연결 감지 리시버 동적 등록
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_POWER_CONNECTED);
+        filter.addAction(Intent.ACTION_POWER_DISCONNECTED); // 전원 끊김 감지 추가
+        filter.addAction(Intent.ACTION_SCREEN_OFF); // 화면 꺼짐 감지 추가
         registerReceiver(powerReceiver, filter);
+
+        // 동적 채널 버튼 생성
+        populateChannelButtons();
     }
 
     // 백그라운드 앱들을 종료하여 램을 확보하는 메서드
@@ -275,29 +291,48 @@ public class FloatingService extends Service {
         if (MacroAccessibilityService.instance != null) {
             Handler handler = new Handler(Looper.getMainLooper());
             
-            // 1. 티맵 로딩 및 광고가 뜰 때까지 넉넉하게 대기 (15초 = 15000ms 설정)
-            // 기기 속도에 맞춰 이 숫자를 조절하세요.
-            handler.postDelayed(() -> {
-                MacroAccessibilityService.instance.performClick(1130f, 70f);
-                Toast.makeText(this, "매크로: 광고 닫기 터치 🤖", Toast.LENGTH_SHORT).show();
-                
-                // 2. 광고 닫기 후 1초(1000ms) 대기 후 안심 주행 버튼 터치
-                handler.postDelayed(() -> {
+            // 1초 간격으로 두 번 클릭하는 공통 동작 정의
+            Runnable doubleClickAction = () -> {
+                if (MacroAccessibilityService.instance != null) {
                     MacroAccessibilityService.instance.performClick(1130f, 70f);
-                    Toast.makeText(this, "매크로: 안심 주행 진입 🤖", Toast.LENGTH_SHORT).show();
-                }, 1000);
-                
-            }, 15000); 
+                    handler.postDelayed(() -> {
+                        if (MacroAccessibilityService.instance != null) {
+                            MacroAccessibilityService.instance.performClick(1130f, 70f);
+                        }
+                    }, 1000);
+                }
+            };
+
+            // 로딩 속도 편차를 고려하여 10초, 20초, 30초에 걸쳐 총 3회 반복
+            handler.postDelayed(() -> {
+                doubleClickAction.run();
+            }, 10000);
+            handler.postDelayed(() -> {
+                doubleClickAction.run();
+            }, 20000);
+            handler.postDelayed(() -> {
+                doubleClickAction.run();
+                Toast.makeText(this, "매크로: 티맵 안전주행 모드 확인 완료 🤖", Toast.LENGTH_SHORT).show();
+            }, 30000);
         } else {
             Toast.makeText(this, "매크로 대기 중... (작동하지 않으면 설정에서 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void showYouTubeChannelDialog() {
-        // 다이얼로그용 기본 테마 적용
-        ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
-        
-        // 기기에 저장된 커스텀 채널 목록 불러오기
+    // 모두 닫기(최근 실행 앱 정리) 매크로 실행
+    private void executeCloseAllAppsMacro() {
+        if (MacroAccessibilityService.instance != null) {
+            // MacroAccessibilityService에 구현할 메서드 호출
+            MacroAccessibilityService.instance.closeAllRecentApps();
+        }
+    }
+
+    // 플로팅 메뉴 안에 유튜브 채널 버튼들을 동적으로 생성하여 가로로 나열하는 메서드
+    private void populateChannelButtons() {
+        LinearLayout container = floatingView.findViewById(R.id.channelButtonContainer);
+        if (container == null) return;
+        container.removeAllViews();
+
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
         String jsonString = prefs.getString("brave_channels", null);
 
@@ -306,7 +341,6 @@ public class FloatingService extends Service {
 
         try {
             if (jsonString == null) {
-                // 처음 실행 시 기본 제공 목록 세팅
                 channelNames.add("운전용 음악 재생"); channelUrls.add("https://www.youtube.com/results?search_query=driving+music+playlist");
                 channelNames.add("실시간 YTN 뉴스"); channelUrls.add("https://www.youtube.com/watch?v=GoXhAEYGj1Q");
                 channelNames.add("침착맨"); channelUrls.add("https://www.youtube.com/@chim_tube");
@@ -324,41 +358,80 @@ public class FloatingService extends Service {
             e.printStackTrace();
         }
 
-        // 표시할 메뉴 구성
-        List<String> displayList = new ArrayList<>(channelNames);
-        displayList.add("➕ 새 채널 추가");
-        displayList.add("➖ 채널 삭제");
-        displayList.add("닫기");
+        // 동그란 아이콘 모양을 만들기 위해 고정된 가로/세로 크기(90dp) 설정
+        int sizeInPx = (int) (90 * getResources().getDisplayMetrics().density);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(contextThemeWrapper);
-        builder.setTitle("유튜브 채널 선택");
-        builder.setItems(displayList.toArray(new CharSequence[0]), (dialog, which) -> {
-            if (which < channelNames.size()) {
-                // 내장 브라우저 화면(BrowserActivity) 호출
+        for (int i = 0; i < channelNames.size(); i++) {
+            String name = channelNames.get(i);
+            String url = channelUrls.get(i);
+
+            TextView btn = new TextView(this);
+            btn.setText(formatChannelName(name)); // 이름 포맷팅 적용
+            btn.setTextColor(Color.WHITE);
+            btn.setTextSize(15); // 원 안에 들어가도록 글자 크기 축소
+            btn.setMaxLines(2);
+            btn.setGravity(Gravity.CENTER);
+            btn.setTypeface(null, android.graphics.Typeface.BOLD);
+            btn.setBackgroundResource(R.drawable.bg_round_btn);
+            
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizeInPx, sizeInPx);
+            lp.setMargins(0, 0, 24, 0);
+            btn.setLayoutParams(lp);
+
+            // 클릭 시 유튜브 실행
+            btn.setOnClickListener(v -> {
                 Intent intent = new Intent(this, BrowserActivity.class);
-                intent.putExtra("url", channelUrls.get(which));
+                intent.putExtra("url", url);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
-            } else if (which == channelNames.size()) {
-                showAddChannelDialog(channelNames, channelUrls);
-            } else if (which == channelNames.size() + 1) {
-                showDeleteChannelDialog(channelNames, channelUrls);
-            }
-            dialog.dismiss();
+                hideHandler.post(hideRunnable);
+            });
+
+            // 길게 누를 시 삭제 로직
+            final int index = i;
+            btn.setOnLongClickListener(v -> {
+                showDeleteConfirmDialog(name, index, channelNames, channelUrls);
+                return true;
+            });
+
+            container.addView(btn);
+        }
+
+        // 새 채널 추가 버튼
+        TextView addBtn = new TextView(this);
+        addBtn.setText("➕\n추가");
+        addBtn.setTextColor(Color.WHITE);
+        addBtn.setTextSize(15);
+        addBtn.setGravity(Gravity.CENTER);
+        addBtn.setTypeface(null, android.graphics.Typeface.BOLD);
+        addBtn.setBackgroundResource(R.drawable.bg_round_btn);
+        
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizeInPx, sizeInPx);
+        addBtn.setLayoutParams(lp);
+
+        addBtn.setOnClickListener(v -> {
+            showAddChannelDialog(channelNames, channelUrls);
         });
 
-        AlertDialog dialog = builder.create();
-        
-        // 서비스 영역에서 시스템 다이얼로그를 띄우기 위한 필수 윈도우 타입 권한 설정
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY);
-        } else {
-            dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_PHONE);
-        }
-        dialog.show();
+        container.addView(addBtn);
     }
 
-    // 채널 추가 다이얼로그 띄우기
+    // 채널 이름을 규칙(한글은 2, 영문은 1로 계산해 최대 16너비까지만, 그리고 공백은 줄바꿈)에 맞게 포맷팅
+    private String formatChannelName(String name) {
+        StringBuilder truncated = new StringBuilder();
+        int length = 0;
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            // 한글(가~힣, 자음모음)인지 판별하여 너비를 2로, 나머지는 1로 계산
+            int w = (c >= 0xAC00 && c <= 0xD7A3) || (c >= 0x3131 && c <= 0x318E) ? 2 : 1;
+            if (length + w > 16) break; // 지정된 글자 수를 초과하면 자름
+            truncated.append(c);
+            length += w;
+        }
+        return truncated.toString().replaceFirst(" ", "\n"); // 첫 번째 공백을 줄바꿈으로 변경
+    }
+
+    // 채널 추가 다이얼로그 (버튼 누르면 호출됨)
     private void showAddChannelDialog(List<String> channelNames, List<String> channelUrls) {
         ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
         AlertDialog.Builder builder = new AlertDialog.Builder(contextThemeWrapper);
@@ -385,7 +458,7 @@ public class FloatingService extends Service {
                 channelUrls.add(url);
                 saveChannels(channelNames, channelUrls);
                 Toast.makeText(this, "추가되었습니다.", Toast.LENGTH_SHORT).show();
-                showYouTubeChannelDialog(); // 목록 다시 띄우기
+                populateChannelButtons(); // UI 버튼 다시 그리기
             } else {
                 Toast.makeText(this, "이름과 URL을 모두 입력해주세요.", Toast.LENGTH_SHORT).show();
             }
@@ -395,23 +468,22 @@ public class FloatingService extends Service {
         AlertDialog dialog = builder.create();
         int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
         dialog.getWindow().setType(layoutFlag);
-        // 키보드 입력을 위해 NOT_FOCUSABLE 플래그를 확실하게 제거
         dialog.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
         dialog.show();
     }
 
-    // 채널 삭제 다이얼로그 띄우기
-    private void showDeleteChannelDialog(List<String> channelNames, List<String> channelUrls) {
+    // 채널 롱클릭 시 삭제 확인 다이얼로그
+    private void showDeleteConfirmDialog(String name, int index, List<String> channelNames, List<String> channelUrls) {
         ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
         AlertDialog.Builder builder = new AlertDialog.Builder(contextThemeWrapper);
-        builder.setTitle("삭제할 채널 선택");
-
-        builder.setItems(channelNames.toArray(new CharSequence[0]), (dialog, which) -> {
-            channelNames.remove(which);
-            channelUrls.remove(which);
+        builder.setTitle("채널 삭제");
+        builder.setMessage("'" + name + "' 채널을 삭제하시겠습니까?");
+        builder.setPositiveButton("삭제", (dialog, which) -> {
+            channelNames.remove(index);
+            channelUrls.remove(index);
             saveChannels(channelNames, channelUrls);
+            populateChannelButtons(); // UI 버튼 다시 그리기
             Toast.makeText(this, "삭제되었습니다.", Toast.LENGTH_SHORT).show();
-            showYouTubeChannelDialog(); // 목록 다시 띄우기
         });
         builder.setNegativeButton("취소", null);
 

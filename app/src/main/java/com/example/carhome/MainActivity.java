@@ -226,18 +226,29 @@ public class MainActivity extends AppCompatActivity {
         if (MacroAccessibilityService.instance != null) {
             Handler handler = new Handler(Looper.getMainLooper());
             
-            // 1. 티맵 로딩 및 광고가 뜰 때까지 넉넉하게 대기 (15초 = 15000ms)
-            handler.postDelayed(() -> {
-                MacroAccessibilityService.instance.performClick(1130f, 70f);
-                Toast.makeText(this, "매크로: 광고 닫기 터치 🤖", Toast.LENGTH_SHORT).show();
-                
-                // 2. 광고 닫기 후 1초 대기 후 안심 주행 버튼 터치
-                handler.postDelayed(() -> {
+            // 1초 간격으로 두 번 클릭하는 공통 동작 정의
+            Runnable doubleClickAction = () -> {
+                if (MacroAccessibilityService.instance != null) {
                     MacroAccessibilityService.instance.performClick(1130f, 70f);
-                    Toast.makeText(this, "매크로: 안심 주행 진입 🤖", Toast.LENGTH_SHORT).show();
-                }, 1000);
-                
-            }, 15000);
+                    handler.postDelayed(() -> {
+                        if (MacroAccessibilityService.instance != null) {
+                            MacroAccessibilityService.instance.performClick(1130f, 70f);
+                        }
+                    }, 1000);
+                }
+            };
+
+            // 로딩 속도 편차를 고려하여 10초, 20초, 30초에 걸쳐 총 3회 반복
+            handler.postDelayed(() -> {
+                doubleClickAction.run();
+            }, 10000);
+            handler.postDelayed(() -> {
+                doubleClickAction.run();
+            }, 20000);
+            handler.postDelayed(() -> {
+                doubleClickAction.run();
+                Toast.makeText(this, "매크로: 티맵 안전주행 모드 확인 완료 🤖", Toast.LENGTH_SHORT).show();
+            }, 30000);
         } else {
             Toast.makeText(this, "매크로 대기 중... (작동하지 않으면 설정에서 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
         }

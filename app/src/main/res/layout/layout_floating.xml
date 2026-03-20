@@ -68,6 +68,21 @@
             android:scaleType="fitCenter" />
 
         </LinearLayout>
+
+        <!-- 유튜브 채널 동적 버튼 영역 (좌우 스크롤) -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:scrollbars="none">
+            
+            <LinearLayout
+                android:id="@+id/channelButtonContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical" />
+        </HorizontalScrollView>
     </LinearLayout>
 
     <!-- 우측 하단의 반투명 둥근 버튼 (시계 기능 통합) -->

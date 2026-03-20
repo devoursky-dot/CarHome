@@ -94,4 +94,23 @@ public class MacroAccessibilityService extends AccessibilityService {
             e.printStackTrace();
         }
     }
+
+    // 최근 실행 앱 화면을 열고 모두 닫기 버튼을 클릭하는 매크로
+    public void closeAllRecentApps() {
+        // 1. 최근 실행 앱 화면(Recents) 띄우기
+        performGlobalAction(GLOBAL_ACTION_RECENTS);
+
+        // 2. 약간의 딜레이 후 '모두 닫기' 버튼 위치 터치
+        // 최근 앱 화면이 뜨는 데 시간이 걸리므로 1~2초 대기
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            // FIXME: 이 좌표(x, y)는 고객님의 기기 해상도와 '모두 닫기' 버튼 위치에 맞게 수정해야 합니다!
+            // 앞서 안내해드린 adb shell wm size 명령어로 해상도를 확인하고 대략적인 위치를 찾아보세요.
+            // 예: 하단 중앙에 있다면 (960f, 1100f) 등
+            float closeAllX = 500f; 
+            float closeAllY = 1000f; 
+            
+            performClick(closeAllX, closeAllY);
+            
+        }, 1500); // 1.5초(1500ms) 대기. 기기 속도에 따라 조절 필요
+    }
 }
