@@ -9,6 +9,7 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
@@ -20,6 +21,7 @@ import java.util.List;
 
 public class MacroAccessibilityService extends AccessibilityService {
 
+    private static final String TAG = "MacroAccessibility";
     public static MacroAccessibilityService instance;
     private Handler macroHandler = new Handler(Looper.getMainLooper());
     private View activeIndicatorView = null;
@@ -28,7 +30,8 @@ public class MacroAccessibilityService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         instance = this;
-        Toast.makeText(this, "CarHome 접근성 매크로 연결됨 🟢", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "MacroAccessibilityService Connected successfully");
+        Toast.makeText(this, "CarHome 접근성 매크로 준비 완료! 🟢", Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -37,6 +40,7 @@ public class MacroAccessibilityService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {
+        Log.w(TAG, "MacroAccessibilityService Interrupted");
     }
 
     @Override
@@ -48,27 +52,37 @@ public class MacroAccessibilityService extends AccessibilityService {
         return super.onUnbind(intent);
     }
 
-    // 정확하고 빠른 탭(클릭) 제스처 실행 (안드로이드 표준 클릭 인식 시간 80ms)
+    // 안드로이드 표준 제스처 클릭 (Path 길이 오류 완벽 수정: moveTo + lineTo)
     public void performClick(float x, float y) {
+        if (x < 0 || y < 0) return;
+
         Path path = new Path();
         path.moveTo(x, y);
-        GestureDescription.Builder builder = new GestureDescription.Builder();
-        // 80ms 지속시간으로 정확한 '클릭(Tap)' 발생
-        GestureDescription gestureDescription = builder.addStroke(new GestureDescription.StrokeDescription(path, 0, 80)).build();
+        // 안드로이드 제스처 시스템은 길이 0인 패스를 무시하므로, lineTo(x, y + 1)을 추가하여 완벽한 클릭 제스처 생성
+        path.lineTo(x, y + 1);
 
-        dispatchGesture(gestureDescription, new GestureResultCallback() {
+        GestureDescription.Builder builder = new GestureDescription.Builder();
+        // 50ms 탭 제스처
+        builder.addStroke(new GestureDescription.StrokeDescription(path, 0, 50));
+        GestureDescription gesture = builder.build();
+
+        boolean dispatched = dispatchGesture(gesture, new GestureResultCallback() {
             @Override
             public void onCompleted(GestureDescription gestureDescription) {
                 super.onCompleted(gestureDescription);
+                Log.d(TAG, "Gesture completed successfully at (" + x + ", " + y + ")");
             }
 
             @Override
             public void onCancelled(GestureDescription gestureDescription) {
                 super.onCancelled(gestureDescription);
+                Log.w(TAG, "Gesture was cancelled at (" + x + ", " + y + ")");
             }
         }, null);
 
-        // 시각적 표적 원 표시 (0.6초간)
+        Log.d(TAG, "dispatchGesture result: " + dispatched + " at (" + x + ", " + y + ")");
+
+        // 클릭 위치에 시각적 표적 원 표시
         showClickIndicator(x, y, 600);
     }
 
@@ -83,17 +97,18 @@ public class MacroAccessibilityService extends AccessibilityService {
         }
         macroHandler.removeCallbacksAndMessages(null);
 
-        // 5초, 10초, 15초, 20초, 30초 간격으로 연속 확인 클릭 발사 (로딩 지연 및 팝업 완벽 대응)
-        int[] delays = {5000, 10000, 15000, 20000, 30000};
+        // 티맵 로딩 속도에 맞춰 3초, 6초, 9초, 14초, 20초, 30초마다 연속 클릭 시도
+        int[] delays = {3000, 6000, 9000, 14000, 20000, 30000};
 
         for (int delay : delays) {
             macroHandler.postDelayed(() -> {
+                Log.d(TAG, "Executing scheduled Tmap click at (" + x + ", " + y + ") delay=" + delay);
                 performClick(x, y);
             }, delay);
         }
 
         macroHandler.postDelayed(() -> {
-            Toast.makeText(this, "매크로: 티맵 안전주행 모드 확인 완료 🤖", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "티맵 안전주행 자동확인 완료! 🤖", Toast.LENGTH_SHORT).show();
         }, 30500);
     }
 
@@ -102,50 +117,52 @@ public class MacroAccessibilityService extends AccessibilityService {
         WindowManager wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         if (wm == null) return;
 
-        if (activeIndicatorView != null) {
+        new Handler(Looper.getMainLooper()).post(() -> {
             try {
-                wm.removeView(activeIndicatorView);
-            } catch (Exception ignored) {}
-            activeIndicatorView = null;
-        }
-
-        View indicator = new View(this);
-        int size = 90; // 표적 원 크기 (90픽셀)
-
-        GradientDrawable shape = new GradientDrawable();
-        shape.setShape(GradientDrawable.OVAL);
-        shape.setColor(Color.parseColor("#70FF0000")); // 반투명 빨간색
-        shape.setStroke(4, Color.parseColor("#FFFF0000")); // 진한 빨간색 테두리
-        indicator.setBackground(shape);
-
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                size, size,
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT
-        );
-
-        params.gravity = Gravity.TOP | Gravity.START;
-        params.x = (int) x - (size / 2);
-        params.y = (int) y - (size / 2);
-
-        try {
-            wm.addView(indicator, params);
-            activeIndicatorView = indicator;
-
-            if (durationMs > 0) {
-                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (activeIndicatorView != null) {
                     try {
-                        if (activeIndicatorView == indicator) {
-                            wm.removeView(indicator);
-                            activeIndicatorView = null;
-                        }
+                        wm.removeView(activeIndicatorView);
                     } catch (Exception ignored) {}
-                }, durationMs);
+                    activeIndicatorView = null;
+                }
+
+                View indicator = new View(this);
+                int size = 90; // 표적 원 크기
+
+                GradientDrawable shape = new GradientDrawable();
+                shape.setShape(GradientDrawable.OVAL);
+                shape.setColor(Color.parseColor("#70FF0000")); // 반투명 빨간색
+                shape.setStroke(4, Color.parseColor("#FFFF0000")); // 진한 빨간색 테두리
+                indicator.setBackground(shape);
+
+                WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                        size, size,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                        PixelFormat.TRANSLUCENT
+                );
+
+                params.gravity = Gravity.TOP | Gravity.START;
+                params.x = (int) x - (size / 2);
+                params.y = (int) y - (size / 2);
+
+                wm.addView(indicator, params);
+                activeIndicatorView = indicator;
+
+                if (durationMs > 0) {
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        try {
+                            if (activeIndicatorView == indicator) {
+                                wm.removeView(indicator);
+                                activeIndicatorView = null;
+                            }
+                        } catch (Exception ignored) {}
+                    }, durationMs);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error showing click indicator", e);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        });
     }
 
     // 최근 실행 앱 화면을 열고 모두 닫기 버튼을 클릭하는 매크로
