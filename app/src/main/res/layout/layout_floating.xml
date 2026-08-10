@@ -5,42 +5,21 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <!-- 실제 앱 아이콘과 시계 영역 (펼침 팝업) -->
+    <!-- 실제 앱 아이콘 팝업 메뉴 (시간/날짜 제거 후 깔끔한 퀵 런처 카드) -->
     <LinearLayout
         android:id="@+id/floatingContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:background="@drawable/bg_floating_popup"
-        android:padding="24dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="18dp"
         android:gravity="center"
         android:visibility="gone">
 
-        <!-- 윗줄 1: 날짜 (시간 위 배치) -->
-        <TextClock
-            android:id="@+id/textClockFloatingDate"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:format12Hour="yyyy년 M월 d일 (E)"
-            android:format24Hour="yyyy년 M월 d일 (E)"
-            android:textColor="#3DDC84"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="2dp" />
-
-        <!-- 윗줄 2: 대형 시계 -->
-        <TextClock
-            android:id="@+id/textClockFloating"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:format12Hour="hh:mm a"
-            android:format24Hour="HH:mm"
-            android:textColor="#FFFFFF"
-            android:textSize="50sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-
-        <!-- 아랫줄: 퀵 액션 앱 아이콘들 (가로로 균등하게 5등분 배치) -->
+        <!-- 퀵 액션 앱 아이콘들 (가로 5등분 균등 배치) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -93,7 +72,7 @@
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="16dp"
             android:scrollbars="none">
 
             <LinearLayout
@@ -105,7 +84,7 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <!-- 우측 하단의 상시 노출 반투명 플로팅 위젯 (2줄 날짜 + 시간 통합, 뚜렷하고 선명한 폰트) -->
+    <!-- 우측 하단의 상시 노출 플로팅 위젯 (날짜 + 시간 모두 꽉 찬 순백색 #FFFFFF 볼드 폰트) -->
     <LinearLayout
         android:id="@+id/handleBar"
         android:layout_width="wrap_content"
@@ -121,7 +100,7 @@
         android:clickable="true"
         android:focusable="true">
 
-        <!-- 윗줄: 날짜 및 요일 (선명한 화이트/골드 고대비 폰트) -->
+        <!-- 윗줄: 날짜 및 요일 (속이 꽉 찬 순백색 볼드) -->
         <TextClock
             android:id="@+id/handleDate"
             android:layout_width="wrap_content"
@@ -133,15 +112,15 @@
             android:textStyle="bold"
             android:layout_marginBottom="2dp" />
 
-        <!-- 아랫줄: 현재 시간 (에메랄드 그린 선명한 폰트) -->
+        <!-- 아랫줄: 현재 시간 (속이 꽉 찬 순백색 볼드) -->
         <TextClock
             android:id="@+id/handleTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:format12Hour="h:mm a"
             android:format24Hour="HH:mm"
-            android:textColor="#3DDC84"
-            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
             android:textStyle="bold" />
     </LinearLayout>
 </FrameLayout>

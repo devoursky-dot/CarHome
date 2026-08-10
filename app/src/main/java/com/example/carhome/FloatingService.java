@@ -334,11 +334,6 @@ public class FloatingService extends Service {
             handleDate.setTextSize(TypedValue.COMPLEX_UNIT_SP, Math.max(14, (int) (clockSize * 0.82f)));
         }
 
-        TextView tcFloating = floatingView.findViewById(R.id.textClockFloating);
-        if (tcFloating != null) {
-            tcFloating.setTextSize(TypedValue.COMPLEX_UNIT_SP, prefs.getInt("popup_clock_size", 50));
-        }
-
         int iconSizePx = (int) (prefs.getInt("popup_icon_size", 80) * getResources().getDisplayMetrics().density);
         updateIconSize(floatingView.findViewById(R.id.btnFloatingTmap), iconSizePx);
         updateIconSize(floatingView.findViewById(R.id.btnFloatingVideo), iconSizePx);
