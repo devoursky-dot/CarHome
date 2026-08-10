@@ -90,7 +90,6 @@ public class MainActivity extends AppCompatActivity {
         String app1 = prefs.getString("app1", "com.skt.tmap.ku");
         String app2 = prefs.getString("app2", "com.google.android.apps.youtube.music");
         String app3 = prefs.getString("app3", "com.google.android.youtube");
-        String app4 = prefs.getString("app4", "com.android.settings");
         String app5 = prefs.getString("app5", "com.android.chrome");
         String app6 = prefs.getString("app6", "com.android.vending");
 
@@ -98,9 +97,19 @@ public class MainActivity extends AppCompatActivity {
         setupAppIconAndClick(btnNavi, app1, "app1");
         setupAppIconAndClick(btnMusic, app2, "app2");
         setupAppIconAndClick(btnYoutube, app3, "app3");
-        setupAppIconAndClick(btnSettings, app4, "app4");
         setupAppIconAndClick(btnApp5, app5, "app5");
         setupAppIconAndClick(btnApp6, app6, "app6");
+
+        // 설정 버튼은 CarHome 전용 설정 화면으로 고정 연결 (기본 시스템 설정 아이콘 활용)
+        try {
+            Drawable settingsIcon = getPackageManager().getApplicationIcon("com.android.settings");
+            btnSettings.setImageDrawable(settingsIcon);
+        } catch (PackageManager.NameNotFoundException e) {
+            btnSettings.setImageResource(android.R.drawable.ic_menu_preferences);
+        }
+        btnSettings.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+        });
 
         // 상태 표시줄 UI 연결 및 설정
         tvMemory = findViewById(R.id.tvMemory);
@@ -123,8 +132,11 @@ public class MainActivity extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                int batteryPct = (int) ((level / (float) scale) * 100);
                 
+                // 배터리 scale이 0으로 반환될 경우 0으로 나누기 오류(앱 튕김) 방지
+                int batteryPct = 0;
+                if (scale > 0) batteryPct = (int) ((level / (float) scale) * 100);
+
                 // 전원 연결(충전) 상태 확인
                 int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
                 boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
@@ -223,16 +235,20 @@ public class MainActivity extends AppCompatActivity {
 
     // 티맵 광고 닫기 및 안심 주행 자동 터치 매크로
     private void executeTmapMacro() {
+        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+        float tmapX = prefs.getInt("tmap_x", 1130);
+        float tmapY = prefs.getInt("tmap_y", 70);
+
         if (MacroAccessibilityService.instance != null) {
             Handler handler = new Handler(Looper.getMainLooper());
             
             // 1초 간격으로 두 번 클릭하는 공통 동작 정의
             Runnable doubleClickAction = () -> {
                 if (MacroAccessibilityService.instance != null) {
-                    MacroAccessibilityService.instance.performClick(1130f, 70f);
+                    MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
                     handler.postDelayed(() -> {
                         if (MacroAccessibilityService.instance != null) {
-                            MacroAccessibilityService.instance.performClick(1130f, 70f);
+                            MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
                         }
                     }, 1000);
                 }

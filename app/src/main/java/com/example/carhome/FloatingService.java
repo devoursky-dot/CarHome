@@ -49,6 +49,69 @@ public class FloatingService extends Service {
     private Handler autoLaunchHandler = new Handler(Looper.getMainLooper());
     private Handler powerOffHandler = new Handler(Looper.getMainLooper()); // 전원 끊김 타이머용
 
+    // 설정 화면에서 값을 바꿨을 때 실시간으로 숨김 버튼 위치를 갱신하는 리시버
+    private final BroadcastReceiver settingsReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.example.carhome.UPDATE_SETTINGS".equals(intent.getAction())) {
+                SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+                String key = intent.getStringExtra("key");
+
+                if ("popup_y".equals(key)) {
+                    // 팝업 메뉴 설정 중: 메뉴를 강제로 열어 실시간 위치를 화면에 보여줍니다.
+                    if (floatingContent != null) floatingContent.setVisibility(View.VISIBLE);
+                    if (handleBar != null) handleBar.setVisibility(View.GONE);
+                    params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+                    params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+                    params.x = 0;
+                    params.y = prefs.getInt("popup_y", 200);
+                    
+                    hideHandler.removeCallbacks(hideRunnable);
+                    hideHandler.postDelayed(hideRunnable, 3000); // 조절이 끝나면 3초 뒤 다시 숨김
+                } else if ("floating_y".equals(key)) {
+                    // 숨김바(손잡이) 설정 중: 메뉴를 닫고 손잡이 위치를 보여줍니다.
+                    if (floatingContent != null) floatingContent.setVisibility(View.GONE);
+                    if (handleBar != null) handleBar.setVisibility(View.VISIBLE);
+                    params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                    params.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+                    params.x = 32;
+                    params.y = prefs.getInt("floating_y", 132);
+                } else if ("handle_clock_size".equals(key)) {
+                    // 숨김바 시계 크기 조절: 메뉴 닫고 손잡이 보여주며 크기 반영
+                    if (floatingContent != null) floatingContent.setVisibility(View.GONE);
+                    if (handleBar != null) handleBar.setVisibility(View.VISIBLE);
+                    params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                    params.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+                    params.x = 32;
+                    params.y = prefs.getInt("floating_y", 132);
+                    
+                    applySizesToViews(prefs);
+                } else if ("popup_clock_size".equals(key) || "popup_icon_size".equals(key)) {
+                    // 팝업 시계/아이콘 크기 조절: 메뉴 강제로 열어서 크기 반영
+                    if (floatingContent != null) floatingContent.setVisibility(View.VISIBLE);
+                    if (handleBar != null) handleBar.setVisibility(View.GONE);
+                    params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+                    params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+                    params.x = 0;
+                    params.y = prefs.getInt("popup_y", 200);
+                    
+                    applySizesToViews(prefs);
+                    
+                    hideHandler.removeCallbacks(hideRunnable);
+                    hideHandler.postDelayed(hideRunnable, 3000); // 3초 뒤 다시 숨김
+                } else {
+                    // 그 외 예외 처리
+                    if (floatingContent != null && floatingContent.getVisibility() == View.VISIBLE) {
+                        params.y = prefs.getInt("popup_y", 200);
+                    } else {
+                        params.y = prefs.getInt("floating_y", 132);
+                    }
+                }
+                try { windowManager.updateViewLayout(floatingView, params); } catch (Exception e) {}
+            }
+        }
+    };
+
     // 전원 연결 시 화면을 켜주기 위한 브로드캐스트 리시버
     private final BroadcastReceiver powerReceiver = new BroadcastReceiver() {
         @Override
@@ -118,6 +181,7 @@ public class FloatingService extends Service {
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
             params.gravity = Gravity.BOTTOM | Gravity.RIGHT;
             params.x = 32;
+            params.y = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("floating_y", 132);
 
             try {
                 windowManager.updateViewLayout(floatingView, params);
@@ -154,10 +218,12 @@ public class FloatingService extends Service {
                 PixelFormat.TRANSLUCENT
         );
 
+        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+
         // 화면 우측 하단에 고정
         params.gravity = Gravity.BOTTOM | Gravity.RIGHT;
         params.x = 32; // 우측 여백
-        params.y = 132; // 하단 여백 (기존 32에서 위로 100만큼 올림)
+        params.y = prefs.getInt("floating_y", 132); // 사용자가 설정한 여백 불러오기
 
         windowManager.addView(floatingView, params);
 
@@ -173,6 +239,7 @@ public class FloatingService extends Service {
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
             params.gravity = Gravity.BOTTOM | Gravity.RIGHT;
             params.x = 32;
+            params.y = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("floating_y", 132);
             windowManager.updateViewLayout(floatingView, params);
         };
 
@@ -185,10 +252,12 @@ public class FloatingService extends Service {
             params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
             params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
             params.x = 0; // 중앙 정렬이므로 좌우 여백 0
+            params.y = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("popup_y", 200);
             windowManager.updateViewLayout(floatingView, params);
 
             hideHandler.removeCallbacks(hideRunnable);
-            hideHandler.postDelayed(hideRunnable, 5000); // 5초 대기
+            int autoCloseSec = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("auto_close", 5);
+            hideHandler.postDelayed(hideRunnable, autoCloseSec * 1000L); // 설정된 시간만큼 대기
         });
 
         // 뷰 연결 및 기기에 설치된 앱 아이콘 로드
@@ -223,14 +292,59 @@ public class FloatingService extends Service {
             hideHandler.post(hideRunnable); // 청소 시작과 동시에 메뉴 숨김
         });
 
+        // 사용자 설정 크기 일괄 적용 및 채널 버튼 생성
+        applySizesToViews(prefs);
+
         // 전원 연결 감지 리시버 동적 등록
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_POWER_CONNECTED);
         filter.addAction(Intent.ACTION_POWER_DISCONNECTED); // 전원 끊김 감지 추가
         registerReceiver(powerReceiver, filter);
 
-        // 동적 채널 버튼 생성
-        populateChannelButtons();
+        // 설정 변경 감지 리시버 등록
+        IntentFilter settingsFilter = new IntentFilter("com.example.carhome.UPDATE_SETTINGS");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(settingsReceiver, settingsFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(settingsReceiver, settingsFilter);
+        }
+    }
+
+    // 설정된 크기를 뷰에 적용하는 헬퍼 메서드
+    private void applySizesToViews(SharedPreferences prefs) {
+        // 1. 숨김버튼 시계 크기 (단일 뷰이거나, 레이아웃 안에 텍스트가 들어있는 경우 모두 강력하게 탐색하여 크기 변경)
+        if (handleBar instanceof android.widget.TextView) {
+            ((android.widget.TextView) handleBar).setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, prefs.getInt("handle_clock_size", 20));
+        } else if (handleBar instanceof android.view.ViewGroup) {
+            android.view.ViewGroup vg = (android.view.ViewGroup) handleBar;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                if (vg.getChildAt(i) instanceof android.widget.TextView) {
+                    ((android.widget.TextView) vg.getChildAt(i)).setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, prefs.getInt("handle_clock_size", 20));
+                }
+            }
+        }
+
+        // 2. 팝업 메뉴 시계 크기
+        android.widget.TextView tcFloating = floatingView.findViewById(R.id.textClockFloating);
+        if (tcFloating != null) {
+            tcFloating.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, prefs.getInt("popup_clock_size", 50));
+        }
+
+        // 3. 팝업 메뉴 아이콘 크기
+        int iconSizePx = (int) (prefs.getInt("popup_icon_size", 100) * getResources().getDisplayMetrics().density);
+        updateIconSize(floatingView.findViewById(R.id.btnFloatingTmap), iconSizePx);
+        updateIconSize(floatingView.findViewById(R.id.btnFloatingVideo), iconSizePx);
+        updateIconSize(floatingView.findViewById(R.id.btnFloatingBrave), iconSizePx);
+        updateIconSize(floatingView.findViewById(R.id.btnFloatingClean), iconSizePx);
+        populateChannelButtons(); // 유튜브 채널 아이콘들도 비례해서 다시 그림
+    }
+
+    private void updateIconSize(View v, int sizePx) {
+        if (v != null && v.getLayoutParams() != null) {
+            v.getLayoutParams().width = sizePx;  // 누락되었던 가로 너비 확장 추가!
+            v.getLayoutParams().height = sizePx;
+            v.requestLayout();
+        }
     }
 
     // 백그라운드 앱들을 종료하여 램을 확보하는 메서드
@@ -289,16 +403,20 @@ public class FloatingService extends Service {
 
     // 티맵 광고 닫기 및 안심 주행 자동 터치 매크로
     private void executeTmapMacro() {
+        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+        float tmapX = prefs.getInt("tmap_x", 1130);
+        float tmapY = prefs.getInt("tmap_y", 70);
+
         if (MacroAccessibilityService.instance != null) {
             Handler handler = new Handler(Looper.getMainLooper());
             
             // 1초 간격으로 두 번 클릭하는 공통 동작 정의
             Runnable doubleClickAction = () -> {
                 if (MacroAccessibilityService.instance != null) {
-                    MacroAccessibilityService.instance.performClick(1130f, 70f);
+                    MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
                     handler.postDelayed(() -> {
                         if (MacroAccessibilityService.instance != null) {
-                            MacroAccessibilityService.instance.performClick(1130f, 70f);
+                            MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
                         }
                     }, 1000);
                 }
@@ -359,8 +477,10 @@ public class FloatingService extends Service {
             e.printStackTrace();
         }
 
-        // 동그란 아이콘 모양을 만들기 위해 고정된 가로/세로 크기(90dp) 설정
-        int sizeInPx = (int) (90 * getResources().getDisplayMetrics().density);
+        // 채널 동그란 아이콘 크기는 메인 아이콘 크기에서 조금(-10dp) 작게 비례해서 적용
+        int iconSizeDp = prefs.getInt("popup_icon_size", 100);
+        int channelSizeDp = Math.max(50, iconSizeDp - 10); // 너무 작아지지 않게 방어
+        int sizeInPx = (int) (channelSizeDp * getResources().getDisplayMetrics().density);
 
         for (int i = 0; i < channelNames.size(); i++) {
             String name = channelNames.get(i);
@@ -517,6 +637,7 @@ public class FloatingService extends Service {
         if (autoLaunchHandler != null) autoLaunchHandler.removeCallbacksAndMessages(null);
         if (powerOffHandler != null) powerOffHandler.removeCallbacksAndMessages(null);
         if (powerReceiver != null) { try { unregisterReceiver(powerReceiver); } catch (Exception e) {} }
+        if (settingsReceiver != null) { try { unregisterReceiver(settingsReceiver); } catch (Exception e) {} }
         if (hideHandler != null && hideRunnable != null) hideHandler.removeCallbacks(hideRunnable);
         if (floatingView != null) windowManager.removeView(floatingView);
     }

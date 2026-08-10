@@ -33,6 +33,9 @@
         <!-- 내장 브라우저 화면 등록 (회전 시 새로고침 방지 코드 추가) -->
         <activity android:name=".BrowserActivity" android:exported="false" android:launchMode="singleTask" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden" />
 
+        <!-- CarHome 전용 설정 화면 등록 -->
+        <activity android:name=".SettingsActivity" android:exported="false" />
+
         <!-- 플로팅 화면을 띄워줄 서비스 등록 -->
         <service android:name=".FloatingService" />
 
