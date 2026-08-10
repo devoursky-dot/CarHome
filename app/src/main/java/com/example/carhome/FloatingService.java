@@ -323,9 +323,15 @@ public class FloatingService extends Service {
     }
 
     private void applySizesToViews(SharedPreferences prefs) {
+        int clockSize = prefs.getInt("handle_clock_size", 18);
         TextView handleTime = floatingView.findViewById(R.id.handleTime);
         if (handleTime != null) {
-            handleTime.setTextSize(TypedValue.COMPLEX_UNIT_SP, prefs.getInt("handle_clock_size", 18));
+            handleTime.setTextSize(TypedValue.COMPLEX_UNIT_SP, clockSize);
+        }
+
+        TextView handleDate = floatingView.findViewById(R.id.handleDate);
+        if (handleDate != null) {
+            handleDate.setTextSize(TypedValue.COMPLEX_UNIT_SP, Math.max(14, (int) (clockSize * 0.82f)));
         }
 
         TextView tcFloating = floatingView.findViewById(R.id.textClockFloating);

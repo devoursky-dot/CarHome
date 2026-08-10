@@ -105,7 +105,7 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <!-- 우측 하단의 상시 노출 반투명 플로팅 위젯 (2줄 날짜 + 시간 통합, 뚜렷한 테두리) -->
+    <!-- 우측 하단의 상시 노출 반투명 플로팅 위젯 (2줄 날짜 + 시간 통합, 뚜렷하고 선명한 폰트) -->
     <LinearLayout
         android:id="@+id/handleBar"
         android:layout_width="wrap_content"
@@ -113,34 +113,35 @@
         android:layout_gravity="bottom|end"
         android:orientation="vertical"
         android:background="@drawable/bg_floating_handle"
-        android:paddingStart="18dp"
-        android:paddingEnd="18dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
         android:gravity="center"
         android:clickable="true"
         android:focusable="true">
 
-        <!-- 윗줄: 날짜 및 요일 -->
+        <!-- 윗줄: 날짜 및 요일 (선명한 화이트/골드 고대비 폰트) -->
         <TextClock
             android:id="@+id/handleDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:format12Hour="M월 d일 (E)"
             android:format24Hour="M월 d일 (E)"
-            android:textColor="#3DDC84"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
 
-        <!-- 아랫줄: 현재 시간 -->
+        <!-- 아랫줄: 현재 시간 (에메랄드 그린 선명한 폰트) -->
         <TextClock
             android:id="@+id/handleTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:format12Hour="h:mm a"
             android:format24Hour="HH:mm"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textColor="#3DDC84"
+            android:textSize="20sp"
             android:textStyle="bold" />
     </LinearLayout>
 </FrameLayout>
