@@ -406,27 +406,10 @@ public class FloatingService extends Service {
         float tmapY = prefs.getInt("tmap_y", 70);
 
         if (MacroAccessibilityService.instance != null) {
-            Handler handler = new Handler(Looper.getMainLooper());
-
-            Runnable doubleClickAction = () -> {
-                if (MacroAccessibilityService.instance != null) {
-                    MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
-                    handler.postDelayed(() -> {
-                        if (MacroAccessibilityService.instance != null) {
-                            MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
-                        }
-                    }, 1000);
-                }
-            };
-
-            handler.postDelayed(doubleClickAction, 10000);
-            handler.postDelayed(doubleClickAction, 20000);
-            handler.postDelayed(() -> {
-                doubleClickAction.run();
-                Toast.makeText(this, "매크로: 티맵 안전주행 모드 확인 완료 🤖", Toast.LENGTH_SHORT).show();
-            }, 30000);
+            Toast.makeText(this, "티맵 안전주행 자동확인 매크로 가동 중... 🤖", Toast.LENGTH_SHORT).show();
+            MacroAccessibilityService.instance.scheduleTmapMacro(tmapX, tmapY);
         } else {
-            Toast.makeText(this, "매크로 대기 중... (접근성 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "접근성 서비스가 꺼져 있습니다. 권한을 확인하세요!", Toast.LENGTH_SHORT).show();
         }
     }
 

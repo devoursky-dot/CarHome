@@ -105,12 +105,36 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             });
         }
 
-        // 2. 하단 2대 독(Dock) 버튼 연결
+        // 2. 하단 4대 핵심 버튼 연결 (티맵, 태블릿 설정, 전체 앱, CarHome 설정)
+        View btnNavi = findViewById(R.id.btnNavi);
+        View btnSystemSettings = findViewById(R.id.btnSystemSettings);
         View btnAllApps = findViewById(R.id.btnAllApps);
         View btnSettings = findViewById(R.id.btnSettings);
 
-        btnAllApps.setOnClickListener(v -> showAppDrawerDialog());
-        btnSettings.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
+        if (btnNavi != null) {
+            btnNavi.setOnClickListener(v -> {
+                launchApp("com.skt.tmap.ku");
+                executeTmapMacro();
+            });
+        }
+
+        if (btnSystemSettings != null) {
+            btnSystemSettings.setOnClickListener(v -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_SETTINGS));
+                } catch (Exception e) {
+                    Toast.makeText(this, "설정 앱을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnAllApps != null) {
+            btnAllApps.setOnClickListener(v -> showAppDrawerDialog());
+        }
+
+        if (btnSettings != null) {
+            btnSettings.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
+        }
 
         // 3. 위치 관리자 초기화 및 권한 확인
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -327,6 +351,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     // [전체 앱 서랍 다이얼로그] 구현
+    private void executeTmapMacro() {
+        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+        float tmapX = prefs.getInt("tmap_x", 1130);
+        float tmapY = prefs.getInt("tmap_y", 70);
+
+        if (MacroAccessibilityService.instance != null) {
+            Toast.makeText(this, "티맵 안전주행 자동확인 매크로 가동 중... 🤖", Toast.LENGTH_SHORT).show();
+            MacroAccessibilityService.instance.scheduleTmapMacro(tmapX, tmapY);
+        } else {
+            Toast.makeText(this, "접근성 서비스가 꺼져 있습니다. 상단 🔴을 눌러 켜주세요!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private void showAppDrawerDialog() {
         PackageManager pm = getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
@@ -392,37 +429,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
         } else {
             Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    // 티맵 광고 닫기 및 안심 주행 자동 터치 매크로
-    private void executeTmapMacro() {
-        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-        float tmapX = prefs.getInt("tmap_x", 1130);
-        float tmapY = prefs.getInt("tmap_y", 70);
-
-        if (MacroAccessibilityService.instance != null) {
-            Handler handler = new Handler(Looper.getMainLooper());
-
-            Runnable doubleClickAction = () -> {
-                if (MacroAccessibilityService.instance != null) {
-                    MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
-                    handler.postDelayed(() -> {
-                        if (MacroAccessibilityService.instance != null) {
-                            MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
-                        }
-                    }, 1000);
-                }
-            };
-
-            handler.postDelayed(doubleClickAction, 10000);
-            handler.postDelayed(doubleClickAction, 20000);
-            handler.postDelayed(() -> {
-                doubleClickAction.run();
-                Toast.makeText(this, "매크로: 티맵 안전주행 모드 확인 완료 🤖", Toast.LENGTH_SHORT).show();
-            }, 30000);
-        } else {
-            Toast.makeText(this, "매크로 대기 중... (접근성 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
         }
     }
 

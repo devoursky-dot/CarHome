@@ -119,6 +119,18 @@ public class SettingsActivity extends AppCompatActivity {
                 SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
                 prefs.edit().putInt(prefKey, progress).apply();
 
+                // 티맵 X, Y 좌표 슬라이더를 움직일 때 실시간으로 화면 위에 빨간 표적 원을 즉시 표시!
+                if (prefKey.equals("tmap_x") || prefKey.equals("tmap_y")) {
+                    int curX = prefs.getInt("tmap_x", 1130);
+                    int curY = prefs.getInt("tmap_y", 70);
+                    if (prefKey.equals("tmap_x")) curX = progress;
+                    if (prefKey.equals("tmap_y")) curY = progress;
+
+                    if (MacroAccessibilityService.instance != null) {
+                        MacroAccessibilityService.instance.showClickIndicator(curX, curY, 1500);
+                    }
+                }
+
                 if (prefKey.equals("floating_y") || prefKey.equals("popup_y") ||
                         prefKey.equals("handle_clock_size") || prefKey.equals("popup_clock_size") ||
                         prefKey.equals("popup_icon_size")) {
