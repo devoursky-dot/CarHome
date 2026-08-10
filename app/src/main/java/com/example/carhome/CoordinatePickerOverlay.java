@@ -92,11 +92,6 @@ public class CoordinatePickerOverlay {
         View btnSave = overlayView.findViewById(R.id.btnSaveCoordinates);
         View btnClose = overlayView.findViewById(R.id.btnClosePicker);
 
-        View btnNudgeLeft = overlayView.findViewById(R.id.btnNudgeLeft);
-        View btnNudgeUp = overlayView.findViewById(R.id.btnNudgeUp);
-        View btnNudgeDown = overlayView.findViewById(R.id.btnNudgeDown);
-        View btnNudgeRight = overlayView.findViewById(R.id.btnNudgeRight);
-
         updateCoordinateText();
 
         // 초기 위치 설정
@@ -138,11 +133,27 @@ public class CoordinatePickerOverlay {
             }
         });
 
-        // 4방향 미세 조정 화살표 버튼 (10px 단위)
-        if (btnNudgeLeft != null) btnNudgeLeft.setOnClickListener(v -> nudge(-10, 0));
-        if (btnNudgeRight != null) btnNudgeRight.setOnClickListener(v -> nudge(10, 0));
-        if (btnNudgeUp != null) btnNudgeUp.setOnClickListener(v -> nudge(0, -10));
-        if (btnNudgeDown != null) btnNudgeDown.setOnClickListener(v -> nudge(0, 10));
+        // 1px 정밀 미세 조정 화살표 버튼
+        View btnNudgeLeft1 = overlayView.findViewById(R.id.btnNudgeLeft1);
+        View btnNudgeUp1 = overlayView.findViewById(R.id.btnNudgeUp1);
+        View btnNudgeDown1 = overlayView.findViewById(R.id.btnNudgeDown1);
+        View btnNudgeRight1 = overlayView.findViewById(R.id.btnNudgeRight1);
+
+        if (btnNudgeLeft1 != null) btnNudgeLeft1.setOnClickListener(v -> nudge(-1, 0));
+        if (btnNudgeRight1 != null) btnNudgeRight1.setOnClickListener(v -> nudge(1, 0));
+        if (btnNudgeUp1 != null) btnNudgeUp1.setOnClickListener(v -> nudge(0, -1));
+        if (btnNudgeDown1 != null) btnNudgeDown1.setOnClickListener(v -> nudge(0, 1));
+
+        // 10px 이동 화살표 버튼
+        View btnNudgeLeft10 = overlayView.findViewById(R.id.btnNudgeLeft10);
+        View btnNudgeUp10 = overlayView.findViewById(R.id.btnNudgeUp10);
+        View btnNudgeDown10 = overlayView.findViewById(R.id.btnNudgeDown10);
+        View btnNudgeRight10 = overlayView.findViewById(R.id.btnNudgeRight10);
+
+        if (btnNudgeLeft10 != null) btnNudgeLeft10.setOnClickListener(v -> nudge(-10, 0));
+        if (btnNudgeRight10 != null) btnNudgeRight10.setOnClickListener(v -> nudge(10, 0));
+        if (btnNudgeUp10 != null) btnNudgeUp10.setOnClickListener(v -> nudge(0, -10));
+        if (btnNudgeDown10 != null) btnNudgeDown10.setOnClickListener(v -> nudge(0, 10));
 
         // 테스트 클릭
         btnTestClick.setOnClickListener(v -> performTestClick());

@@ -33,7 +33,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🎯 빨간 조준경을 원하는 버튼 위로 드래그하세요"
+            android:text="🎯 조준경을 손으로 드래그 후 1px 화살표로 미세조정하세요"
             android:textColor="#3DDC84"
             android:textSize="15sp"
             android:textStyle="bold"
@@ -47,9 +47,73 @@
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:layout_marginBottom="10dp" />
+            android:layout_marginBottom="8dp" />
 
-        <!-- 4방향 미세 조정 화살표 버튼 -->
+        <!-- [정밀 1px 미세조정 화살표 버튼] -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:id="@+id/btnNudgeLeft1"
+                android:layout_width="54dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_dock_btn"
+                android:text="◀ 1px"
+                android:textColor="#3DDC84"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnNudgeUp1"
+                android:layout_width="54dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_dock_btn"
+                android:text="▲ 1px"
+                android:textColor="#3DDC84"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnNudgeDown1"
+                android:layout_width="54dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_dock_btn"
+                android:text="▼ 1px"
+                android:textColor="#3DDC84"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnNudgeRight1"
+                android:layout_width="54dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_dock_btn"
+                android:text="1px ▶"
+                android:textColor="#3DDC84"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- [10px 이동 화살표 버튼] -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -58,11 +122,11 @@
             android:layout_marginBottom="12dp">
 
             <TextView
-                android:id="@+id/btnNudgeLeft"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
+                android:id="@+id/btnNudgeLeft10"
+                android:layout_width="54dp"
+                android:layout_height="34dp"
                 android:background="@drawable/bg_dock_btn"
-                android:text="◀ 10px"
+                android:text="◀ 10"
                 android:textColor="#FFFFFF"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -72,11 +136,11 @@
                 android:focusable="true" />
 
             <TextView
-                android:id="@+id/btnNudgeUp"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
+                android:id="@+id/btnNudgeUp10"
+                android:layout_width="54dp"
+                android:layout_height="34dp"
                 android:background="@drawable/bg_dock_btn"
-                android:text="▲ 10px"
+                android:text="▲ 10"
                 android:textColor="#FFFFFF"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -86,11 +150,11 @@
                 android:focusable="true" />
 
             <TextView
-                android:id="@+id/btnNudgeDown"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
+                android:id="@+id/btnNudgeDown10"
+                android:layout_width="54dp"
+                android:layout_height="34dp"
                 android:background="@drawable/bg_dock_btn"
-                android:text="▼ 10px"
+                android:text="▼ 10"
                 android:textColor="#FFFFFF"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -100,11 +164,11 @@
                 android:focusable="true" />
 
             <TextView
-                android:id="@+id/btnNudgeRight"
-                android:layout_width="48dp"
-                android:layout_height="38dp"
+                android:id="@+id/btnNudgeRight10"
+                android:layout_width="54dp"
+                android:layout_height="34dp"
                 android:background="@drawable/bg_dock_btn"
-                android:text="10px ▶"
+                android:text="10 ▶"
                 android:textColor="#FFFFFF"
                 android:textSize="11sp"
                 android:textStyle="bold"

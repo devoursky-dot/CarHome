@@ -63,6 +63,17 @@ public class SettingsActivity extends AppCompatActivity {
         setupSeekBar(R.id.seekTmapX, R.id.tvTmapX, "tmap_x", currentX, "");
         setupSeekBar(R.id.seekTmapY, R.id.tvTmapY, "tmap_y", currentY, "");
 
+        // 1px / 10px 세부 조절 버튼 연결
+        setupStepButton(R.id.btnTmapXMinus10, R.id.seekTmapX, -10);
+        setupStepButton(R.id.btnTmapXMinus1, R.id.seekTmapX, -1);
+        setupStepButton(R.id.btnTmapXPlus1, R.id.seekTmapX, 1);
+        setupStepButton(R.id.btnTmapXPlus10, R.id.seekTmapX, 10);
+
+        setupStepButton(R.id.btnTmapYMinus10, R.id.seekTmapY, -10);
+        setupStepButton(R.id.btnTmapYMinus1, R.id.seekTmapY, -1);
+        setupStepButton(R.id.btnTmapYPlus1, R.id.seekTmapY, 1);
+        setupStepButton(R.id.btnTmapYPlus10, R.id.seekTmapY, 10);
+
         setupSeekBar(R.id.seekHandleClockSize, R.id.tvHandleClockSize, "handle_clock_size", prefs.getInt("handle_clock_size", 18), " sp");
         setupSeekBar(R.id.seekPopupClockSize, R.id.tvPopupClockSize, "popup_clock_size", prefs.getInt("popup_clock_size", 50), " sp");
         setupSeekBar(R.id.seekPopupIconSize, R.id.tvPopupIconSize, "popup_icon_size", prefs.getInt("popup_icon_size", 80), " dp");
@@ -244,5 +255,16 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+    }
+
+    private void setupStepButton(int btnId, int seekId, int delta) {
+        View btn = findViewById(btnId);
+        SeekBar seekBar = findViewById(seekId);
+        if (btn != null && seekBar != null) {
+            btn.setOnClickListener(v -> {
+                int newProgress = Math.max(0, Math.min(seekBar.getMax(), seekBar.getProgress() + delta));
+                seekBar.setProgress(newProgress);
+            });
+        }
     }
 }
