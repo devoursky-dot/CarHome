@@ -1,5 +1,6 @@
 package com.example.carhome;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
@@ -11,7 +12,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -19,28 +24,42 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LocationListener {
 
-    private TextView tvMemory, tvBattery, tvAccessibility;
+    private TextView tvMemory, tvBattery, tvAccessibility, tvGpsStatus;
+    private TextView tvGpsSpeed, tvGpsHeading;
+
     private BroadcastReceiver batteryReceiver;
     private Handler statusHandler = new Handler(Looper.getMainLooper());
     private Runnable statusRunnable;
+
+    private LocationManager locationManager;
+    private static final int PERMISSION_REQ_LOCATION = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,74 +74,160 @@ public class MainActivity extends AppCompatActivity {
                     WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         }
 
-        // 1. 화면 항상 켜짐 유지 - 시스템 설정(예: 15초)을 따르기 위해 주석 처리함
-        // getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        // 화면 번쩍임 방지 코드이나, 커스텀 런처 사용 시 최근 실행 창(모두 닫기)이
-        // 오른쪽으로 쏠리는 시스템 버그를 유발하므로 테스트를 위해 주석 처리함
-        // WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-
         setContentView(R.layout.activity_main);
 
-        // 2. 전체 화면 모드 (상단 상태바 및 하단 네비게이션바 숨기기)
+        // 전체 화면 모드 (상단 상태바 숨기기, 스와이프 시 일시 노출)
         WindowInsetsControllerCompat windowInsetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-
         if (windowInsetsController != null) {
-            // 화면 가장자리 스와이프 시 일시적으로 바가 나타나도록 설정
             windowInsetsController.setSystemBarsBehavior(
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             );
-            // 상단 상태바만 숨기고 하단 네비게이션바(최근 실행 앱 버튼 포함)는 항상 보이게 유지
             windowInsetsController.hide(WindowInsetsCompat.Type.statusBars());
         }
 
-        // 3. 레이아웃의 아이콘(ImageView)들 연결
-        ImageView btnNavi = findViewById(R.id.btnNavi);
-        ImageView btnMusic = findViewById(R.id.btnMusic);
-        ImageView btnYoutube = findViewById(R.id.btnYoutube);
-        ImageView btnSettings = findViewById(R.id.btnSettings);
-        ImageView btnApp5 = findViewById(R.id.btnApp5);
-        ImageView btnApp6 = findViewById(R.id.btnApp6);
-
-        // 4. 기기에 저장된 사용자의 앱 설정값을 불러옵니다. (없을 경우 기본값 사용)
-        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-        String app1 = prefs.getString("app1", "com.skt.tmap.ku");
-        String app2 = prefs.getString("app2", "com.google.android.apps.youtube.music");
-        String app3 = prefs.getString("app3", "com.google.android.youtube");
-        String app5 = prefs.getString("app5", "com.android.chrome");
-        String app6 = prefs.getString("app6", "com.android.vending");
-
-        // UI와 클릭 이벤트 연결
-        setupAppIconAndClick(btnNavi, app1, "app1");
-        setupAppIconAndClick(btnMusic, app2, "app2");
-        setupAppIconAndClick(btnYoutube, app3, "app3");
-        setupAppIconAndClick(btnApp5, app5, "app5");
-        setupAppIconAndClick(btnApp6, app6, "app6");
-
-        // 설정 버튼은 CarHome 전용 설정 화면으로 고정 연결 (기본 시스템 설정 아이콘 활용)
-        try {
-            Drawable settingsIcon = getPackageManager().getApplicationIcon("com.android.settings");
-            btnSettings.setImageDrawable(settingsIcon);
-        } catch (PackageManager.NameNotFoundException e) {
-            btnSettings.setImageResource(android.R.drawable.ic_menu_preferences);
-        }
-        btnSettings.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, SettingsActivity.class));
-        });
-
-        // 상태 표시줄 UI 연결 및 설정
+        // 1. 상태바 및 대시보드 뷰 연결
         tvMemory = findViewById(R.id.tvMemory);
         tvBattery = findViewById(R.id.tvBattery);
         tvAccessibility = findViewById(R.id.tvAccessibility);
+        tvGpsStatus = findViewById(R.id.tvGpsStatus);
+        tvGpsSpeed = findViewById(R.id.tvGpsSpeed);
+        tvGpsHeading = findViewById(R.id.tvGpsHeading);
+
         setupStatusBar();
 
-        // 권한 확인 및 플로팅 서비스 실행
+        // 접근성 상태 버튼 클릭 시 안드로이드 접근성 설정창으로 즉시 이동
+        View btnAccessibility = findViewById(R.id.btnAccessibilityStatus);
+        if (btnAccessibility != null) {
+            btnAccessibility.setOnClickListener(v -> {
+                Toast.makeText(this, "CarHome 접근성 서비스를 [사용 중]으로 켜주세요! 🤖", Toast.LENGTH_LONG).show();
+                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            });
+        }
+
+        // 2. 하단 2대 독(Dock) 버튼 연결
+        View btnAllApps = findViewById(R.id.btnAllApps);
+        View btnSettings = findViewById(R.id.btnSettings);
+
+        btnAllApps.setOnClickListener(v -> showAppDrawerDialog());
+        btnSettings.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
+
+        // 3. 위치 관리자 초기화 및 권한 확인
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        checkLocationPermission();
+
+        // 4. 플로팅 오버레이 권한 확인 및 실행
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            // 다른 앱 위에 표시 권한이 없다면 설정창 띄우기
             Toast.makeText(this, "'다른 앱 위에 표시' 권한을 켜주세요!", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
             startActivity(intent);
+        }
+    }
+
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    PERMISSION_REQ_LOCATION
+            );
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQ_LOCATION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                registerLocationUpdates();
+            } else {
+                if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 권한 필요");
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void registerLocationUpdates() {
+        if (locationManager == null) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        try {
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 0.5f, this);
+                if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 수신 중");
+            } else {
+                if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 꺼짐");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void unregisterLocationUpdates() {
+        if (locationManager != null) {
+            try {
+                locationManager.removeUpdates(this);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void onLocationChanged(@NonNull Location location) {
+        if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 정상");
+
+        // 속도 계산 (m/s -> km/h)
+        float speedKmh = 0f;
+        if (location.hasSpeed()) {
+            speedKmh = location.getSpeed() * 3.6f;
+        }
+
+        int speedInt = Math.round(speedKmh);
+        if (tvGpsSpeed != null) {
+            tvGpsSpeed.setText(speedInt + " km/h");
+            // 80km/h 초과 시 시각적 경고 색상
+            if (speedInt >= 100) {
+                tvGpsSpeed.setTextColor(Color.parseColor("#FF5252"));
+            } else if (speedInt >= 80) {
+                tvGpsSpeed.setTextColor(Color.parseColor("#FFB300"));
+            } else {
+                tvGpsSpeed.setTextColor(Color.WHITE);
+            }
+        }
+
+        // 주행 방위 계산
+        if (tvGpsHeading != null) {
+            if (speedInt < 3) {
+                tvGpsHeading.setText("[ 🧭 정지 ]");
+            } else if (location.hasBearing()) {
+                String headingStr = getHeadingString(location.getBearing());
+                tvGpsHeading.setText("[ 🧭 " + headingStr + " ]");
+            }
+        }
+    }
+
+    private String getHeadingString(float bearing) {
+        String[] directions = {"북 (N)", "북동 (NE)", "동 (E)", "남동 (SE)", "남 (S)", "남서 (SW)", "서 (W)", "북서 (NW)"};
+        int index = Math.round(bearing / 45) % 8;
+        return directions[index < 0 ? index + 8 : index];
+    }
+
+    @Override
+    public void onProviderEnabled(@NonNull String provider) {
+        if (LocationManager.GPS_PROVIDER.equals(provider) && tvGpsStatus != null) {
+            tvGpsStatus.setText("📡 GPS 켜짐");
+        }
+    }
+
+    @Override
+    public void onProviderDisabled(@NonNull String provider) {
+        if (LocationManager.GPS_PROVIDER.equals(provider) && tvGpsStatus != null) {
+            tvGpsStatus.setText("📡 GPS 꺼짐");
         }
     }
 
@@ -132,16 +237,14 @@ public class MainActivity extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                
-                // 배터리 scale이 0으로 반환될 경우 0으로 나누기 오류(앱 튕김) 방지
+
                 int batteryPct = 0;
                 if (scale > 0) batteryPct = (int) ((level / (float) scale) * 100);
 
-                // 전원 연결(충전) 상태 확인
                 int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
                 boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL;
                 String chargeStr = isCharging ? " (충전중 ⚡)" : "";
-                
+
                 if (tvBattery != null) tvBattery.setText("BAT: " + batteryPct + "%" + chargeStr);
             }
         };
@@ -158,7 +261,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 화면이 켜지고 런처가 보일 때만 센서 업데이트 시작 (배터리 방전 방지)
         if (batteryReceiver != null) {
             registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         }
@@ -166,26 +268,34 @@ public class MainActivity extends AppCompatActivity {
             statusHandler.post(statusRunnable);
         }
 
-        // 홈 화면에 진입할 때마다 플로팅 서비스가 살아있는지 확인하고 뷰를 초기화 (튕김 및 사라짐 100% 방지)
+        // GPS 수신 등록
+        registerLocationUpdates();
+
+        // 플로팅 서비스 상시 유지 확인
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
-            startService(new Intent(this, FloatingService.class));
+            Intent serviceIntent = new Intent(this, FloatingService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
         }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // 화면이 꺼지거나 다른 앱(티맵 등)이 켜지면 즉시 모든 백그라운드 측정 일시정지 (배터리 극강 절약)
+        // 배터리 방전 방지를 위해 화면 벗어날 때 즉시 센서 및 GPS 해제
         if (batteryReceiver != null) {
             try { unregisterReceiver(batteryReceiver); } catch (Exception e) {}
         }
         if (statusHandler != null && statusRunnable != null) {
             statusHandler.removeCallbacks(statusRunnable);
         }
+        unregisterLocationUpdates();
     }
 
     private void updateMemory() {
-        // RAM 사용량 계산
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memoryInfo);
@@ -193,14 +303,13 @@ public class MainActivity extends AppCompatActivity {
         int memPct = (int) ((usedMem / (double) memoryInfo.totalMem) * 100);
         if (tvMemory != null) tvMemory.setText("RAM: " + memPct + "%");
 
-        // 접근성 서비스(매크로) 연결 상태 확인 및 UI 갱신
         if (tvAccessibility != null) {
             if (MacroAccessibilityService.instance != null) {
-                tvAccessibility.setText("🟢");
-                tvAccessibility.setTextColor(Color.parseColor("#3DDC84")); // 안드로이드 기본 초록색
+                tvAccessibility.setText("🟢 매크로 켜짐");
+                tvAccessibility.setTextColor(Color.parseColor("#3DDC84"));
             } else {
-                tvAccessibility.setText("🔴");
-                tvAccessibility.setTextColor(Color.parseColor("#FF5252")); // 빨간색
+                tvAccessibility.setText("🔴 매크로 꺼짐 (터치)");
+                tvAccessibility.setTextColor(Color.parseColor("#FF5252"));
             }
         }
     }
@@ -208,27 +317,80 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // 앱이 꺼질 때 시스템 메모리 누수를 막기 위해 모든 리스너 해제 (필수)
         if (statusHandler != null && statusRunnable != null) {
             statusHandler.removeCallbacks(statusRunnable);
         }
         if (batteryReceiver != null) {
             try { unregisterReceiver(batteryReceiver); } catch (Exception e) {}
         }
+        unregisterLocationUpdates();
     }
 
-    // 다른 앱을 실행하는 공통 메서드
-    private void launchApp(String packageName) {
+    // [전체 앱 서랍 다이얼로그] 구현
+    private void showAppDrawerDialog() {
+        PackageManager pm = getPackageManager();
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> allApps = pm.queryIntentActivities(mainIntent, 0);
+
+        Collections.sort(allApps, new ResolveInfo.DisplayNameComparator(pm));
+
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_drawer, null);
+        GridView gridApps = dialogView.findViewById(R.id.gridApps);
+        EditText etSearch = dialogView.findViewById(R.id.etSearchApp);
+        ImageView btnClose = dialogView.findViewById(R.id.btnCloseDrawer);
+
+        AppDrawerAdapter adapter = new AppDrawerAdapter(this, allApps, pm);
+        gridApps.setAdapter(adapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.92),
+                    (int) (getResources().getDisplayMetrics().heightPixels * 0.88)
+            );
+        }
+
+        gridApps.setOnItemClickListener((parent, view, position, id) -> {
+            ResolveInfo appInfo = adapter.getItem(position);
+            if (appInfo != null) {
+                launchApp(appInfo.activityInfo.packageName);
+                dialog.dismiss();
+            }
+        });
+
+        // 실시간 앱 검색 필터링
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int count, int after) {
+                adapter.filter(s.toString());
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    // 다른 앱 실행 공통 메서드
+    public void launchApp(String packageName) {
         Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
-            
+
             // 실행한 앱이 티맵일 경우 매크로 발동
             if ("com.skt.tmap.ku".equals(packageName)) {
                 executeTmapMacro();
             }
         } else {
-            // 태블릿에 해당 앱이 설치되어 있지 않을 경우 안내 메시지
             Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -241,8 +403,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (MacroAccessibilityService.instance != null) {
             Handler handler = new Handler(Looper.getMainLooper());
-            
-            // 1초 간격으로 두 번 클릭하는 공통 동작 정의
+
             Runnable doubleClickAction = () -> {
                 if (MacroAccessibilityService.instance != null) {
                     MacroAccessibilityService.instance.performHumanClick(tmapX, tmapY);
@@ -254,90 +415,79 @@ public class MainActivity extends AppCompatActivity {
                 }
             };
 
-            // 로딩 속도 편차를 고려하여 10초, 20초, 30초에 걸쳐 총 3회 반복
-            handler.postDelayed(() -> {
-                doubleClickAction.run();
-            }, 10000);
-            handler.postDelayed(() -> {
-                doubleClickAction.run();
-            }, 20000);
+            handler.postDelayed(doubleClickAction, 10000);
+            handler.postDelayed(doubleClickAction, 20000);
             handler.postDelayed(() -> {
                 doubleClickAction.run();
                 Toast.makeText(this, "매크로: 티맵 안전주행 모드 확인 완료 🤖", Toast.LENGTH_SHORT).show();
             }, 30000);
         } else {
-            Toast.makeText(this, "매크로 대기 중... (작동하지 않으면 설정에서 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "매크로 대기 중... (접근성 권한을 확인하세요)", Toast.LENGTH_SHORT).show();
         }
     }
 
-    // 패키지명으로 앱의 실제 아이콘을 추출해 이미지뷰에 씌우는 메서드
-    private void setupAppIconAndClick(ImageView imageView, String packageName, String prefKey) {
-        PackageManager pm = getPackageManager();
-        try {
-            Drawable icon = pm.getApplicationIcon(packageName);
-            imageView.setImageDrawable(icon);
-        } catch (PackageManager.NameNotFoundException e) {
-            // 앱이 없을 경우 안드로이드 기본 아이콘 표시
-            imageView.setImageResource(android.R.drawable.sym_def_app_icon);
+    // 전체 앱 서랍 어댑터 클래스
+    static class AppDrawerAdapter extends BaseAdapter {
+        private Context context;
+        private List<ResolveInfo> originalList;
+        private List<ResolveInfo> filteredList;
+        private PackageManager pm;
+
+        public AppDrawerAdapter(Context context, List<ResolveInfo> apps, PackageManager pm) {
+            this.context = context;
+            this.originalList = new ArrayList<>(apps);
+            this.filteredList = new ArrayList<>(apps);
+            this.pm = pm;
         }
-        // 클릭 이벤트 연결
-        imageView.setOnClickListener(v -> launchApp(packageName));
 
-        // 길게 누를 경우 앱 변경 다이얼로그 호출
-        imageView.setOnLongClickListener(v -> {
-            showAppSelectionDialog(imageView, prefKey);
-            return true;
-        });
-    }
-
-    // 기기에 설치된 앱 목록을 불러와 다이얼로그로 보여주는 메서드
-    private void showAppSelectionDialog(ImageView imageView, String prefKey) {
-        PackageManager pm = getPackageManager();
-        Intent intent = new Intent(Intent.ACTION_MAIN, null);
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        List<ResolveInfo> apps = pm.queryIntentActivities(intent, 0);
-
-        // 앱 이름을 가나다(알파벳) 순으로 정렬
-        Collections.sort(apps, new ResolveInfo.DisplayNameComparator(pm));
-
-        AppAdapter adapter = new AppAdapter(this, apps);
-        new AlertDialog.Builder(this)
-                .setTitle("앱 선택")
-                .setAdapter(adapter, (dialog, which) -> {
-                    ResolveInfo selectedApp = apps.get(which);
-                    String packageName = selectedApp.activityInfo.packageName;
-
-                    // 선택한 앱을 SharedPreferences에 저장
-                    SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-                    prefs.edit().putString(prefKey, packageName).apply();
-
-                    // 선택 즉시 아이콘과 클릭 이벤트 변경
-                    setupAppIconAndClick(imageView, packageName, prefKey);
-                })
-                .show();
-    }
-
-    // 다이얼로그에 앱 아이콘과 이름을 함께 보여주기 위한 어댑터 클래스
-    class AppAdapter extends ArrayAdapter<ResolveInfo> {
-        PackageManager pm;
-        public AppAdapter(Context context, List<ResolveInfo> apps) {
-            super(context, android.R.layout.select_dialog_item, android.R.id.text1, apps);
-            pm = context.getPackageManager();
+        public void filter(String query) {
+            filteredList.clear();
+            if (query == null || query.trim().isEmpty()) {
+                filteredList.addAll(originalList);
+            } else {
+                String lowerQuery = query.toLowerCase().trim();
+                for (ResolveInfo info : originalList) {
+                    CharSequence label = info.loadLabel(pm);
+                    if (label != null && label.toString().toLowerCase().contains(lowerQuery)) {
+                        filteredList.add(info);
+                    }
+                }
+            }
+            notifyDataSetChanged();
         }
+
+        @Override
+        public int getCount() {
+            return filteredList.size();
+        }
+
+        @Override
+        public ResolveInfo getItem(int position) {
+            return filteredList.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            View view = super.getView(position, convertView, parent);
-            TextView tv = view.findViewById(android.R.id.text1);
-            ResolveInfo info = getItem(position);
+            if (convertView == null) {
+                convertView = LayoutInflater.from(context).inflate(R.layout.item_app_grid, parent, false);
+            }
 
-            tv.setText(info.loadLabel(pm));
-            Drawable icon = info.loadIcon(pm);
-            // 다이얼로그 리스트에 맞춰 아이콘 크기 조정
-            int size = (int) (48 * getResources().getDisplayMetrics().density);
-            icon.setBounds(0, 0, size, size);
-            tv.setCompoundDrawables(icon, null, null, null);
-            tv.setCompoundDrawablePadding(30);
-            return view;
+            ImageView imgIcon = convertView.findViewById(R.id.imgAppIcon);
+            TextView tvName = convertView.findViewById(R.id.tvAppName);
+
+            ResolveInfo info = getItem(position);
+            if (info != null) {
+                tvName.setText(info.loadLabel(pm));
+                Drawable icon = info.loadIcon(pm);
+                imgIcon.setImageDrawable(icon);
+            }
+
+            return convertView;
         }
     }
 }

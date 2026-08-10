@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 외곽 반투명 링 -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="70dp" android:height="70dp" />
+            <solid android:color="#4DFF3B30" />
+            <stroke android:width="3dp" android:color="#FFFF3B30" />
+        </shape>
+    </item>
+    <!-- 중심 정밀 조준점 -->
+    <item android:gravity="center">
+        <shape android:shape="oval">
+            <size android:width="12dp" android:height="12dp" />
+            <solid android:color="#FFFFFFFF" />
+            <stroke android:width="2dp" android:color="#FFFF3B30" />
+        </shape>
+    </item>
+</layer-list>

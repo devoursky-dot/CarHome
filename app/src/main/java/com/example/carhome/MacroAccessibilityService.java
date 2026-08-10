@@ -121,18 +121,24 @@ public class MacroAccessibilityService extends AccessibilityService {
             AccessibilityNodeInfo rootNode = getRootInActiveWindow();
             
             if (rootNode != null) {
-                // 화면 전체에서 "모두 닫기"라는 글자를 가진 버튼(노드)을 싹 다 검색합니다.
-                java.util.List<AccessibilityNodeInfo> nodes = rootNode.findAccessibilityNodeInfosByText("모두 닫기");
-                for (AccessibilityNodeInfo node : nodes) {
-                    if (node.isClickable()) {
-                        node.performAction(AccessibilityNodeInfo.ACTION_CLICK); // 시스템 차원에서 버튼을 강제 클릭!
-                        clicked = true;
-                        break;
-                    } else if (node.getParent() != null && node.getParent().isClickable()) {
-                        node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK); // 글자의 부모 영역이 버튼인 경우
-                        clicked = true;
-                        break;
+                // 화면 전체에서 "모두 닫기" 계열의 글자를 가진 버튼(노드)을 다국어로 검색
+                String[] targetTexts = {"모두 닫기", "모두닫기", "모두 지우기", "모두지우기", "Clear all", "Close all", "지우기"};
+                for (String targetText : targetTexts) {
+                    java.util.List<AccessibilityNodeInfo> nodes = rootNode.findAccessibilityNodeInfosByText(targetText);
+                    if (nodes != null && !nodes.isEmpty()) {
+                        for (AccessibilityNodeInfo node : nodes) {
+                            if (node.isClickable()) {
+                                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                clicked = true;
+                                break;
+                            } else if (node.getParent() != null && node.getParent().isClickable()) {
+                                node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                                clicked = true;
+                                break;
+                            }
+                        }
                     }
+                    if (clicked) break;
                 }
             }
             

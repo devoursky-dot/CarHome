@@ -5,77 +5,97 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <!-- 실제 앱 아이콘과 시계 영역 (평소엔 숨김) -->
+    <!-- 실제 앱 아이콘과 시계 영역 (펼침 팝업) -->
     <LinearLayout
         android:id="@+id/floatingContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#D9121212"
+        android:background="@drawable/bg_floating_popup"
         android:padding="24dp"
         android:gravity="center"
         android:visibility="gone">
 
-    <!-- 윗줄: 시계 -->
-    <TextClock
-        android:id="@+id/textClockFloating"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:format12Hour="hh:mm a"
-        android:format24Hour="HH:mm"
-        android:textColor="#FFFFFF"
-        android:textSize="50sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        <!-- 윗줄 1: 날짜 (시간 위 배치) -->
+        <TextClock
+            android:id="@+id/textClockFloatingDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="yyyy년 M월 d일 (E)"
+            android:format24Hour="yyyy년 M월 d일 (E)"
+            android:textColor="#3DDC84"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="2dp" />
 
-    <!-- 아랫줄: 앱 아이콘들 (가로로 균등하게 4등분 배치) -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:weightSum="4"
-        android:gravity="center">
+        <!-- 윗줄 2: 대형 시계 -->
+        <TextClock
+            android:id="@+id/textClockFloating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="hh:mm a"
+            android:format24Hour="HH:mm"
+            android:textColor="#FFFFFF"
+            android:textSize="50sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
 
-        <ImageView
-            android:id="@+id/btnFloatingTmap"
-            android:layout_width="0dp"
-            android:layout_height="100dp"
-            android:layout_weight="1"
-            android:scaleType="fitCenter" />
+        <!-- 아랫줄: 퀵 액션 앱 아이콘들 (가로로 균등하게 5등분 배치) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="5"
+            android:gravity="center">
 
-        <ImageView
-            android:id="@+id/btnFloatingVideo"
-            android:layout_width="0dp"
-            android:layout_height="100dp"
-            android:layout_weight="1"
-            android:scaleType="fitCenter" />
+            <ImageView
+                android:id="@+id/btnFloatingTmap"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter" />
 
-        <!-- 브레이브 브라우저 -->
-        <ImageView
-            android:id="@+id/btnFloatingBrave"
-            android:layout_width="0dp"
-            android:layout_height="100dp"
-            android:layout_weight="1"
-            android:scaleType="fitCenter" />
+            <ImageView
+                android:id="@+id/btnFloatingVideo"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter" />
 
-        <!-- 램 청소 버튼 -->
-        <ImageView
-            android:id="@+id/btnFloatingClean"
-            android:layout_width="0dp"
-            android:layout_height="100dp"
-            android:layout_weight="1"
-            android:src="@android:drawable/ic_menu_delete"
-            android:scaleType="fitCenter" />
+            <!-- 브라우저 -->
+            <ImageView
+                android:id="@+id/btnFloatingBrave"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:scaleType="fitCenter" />
 
+            <!-- 전체 앱 서랍 바로가기 -->
+            <ImageView
+                android:id="@+id/btnFloatingAllApps"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:src="@android:drawable/ic_menu_agenda"
+                android:scaleType="fitCenter" />
+
+            <!-- 램 청소 버튼 -->
+            <ImageView
+                android:id="@+id/btnFloatingClean"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:src="@android:drawable/ic_menu_delete"
+                android:scaleType="fitCenter" />
         </LinearLayout>
 
         <!-- 유튜브 채널 동적 버튼 영역 (좌우 스크롤) -->
         <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:scrollbars="none">
-            
+
             <LinearLayout
                 android:id="@+id/channelButtonContainer"
                 android:layout_width="wrap_content"
@@ -85,21 +105,42 @@
         </HorizontalScrollView>
     </LinearLayout>
 
-    <!-- 우측 하단의 반투명 둥근 버튼 (시계 기능 통합) -->
-    <TextClock
+    <!-- 우측 하단의 상시 노출 반투명 플로팅 위젯 (2줄 날짜 + 시간 통합, 뚜렷한 테두리) -->
+    <LinearLayout
         android:id="@+id/handleBar"
         android:layout_width="wrap_content"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:background="@drawable/bg_round_btn"
-        android:paddingStart="16dp"
-        android:paddingEnd="20dp"
-        android:drawableStart="@android:drawable/ic_menu_sort_by_size"
-        android:drawablePadding="8dp"
-        android:format12Hour="h:mm a"
-        android:format24Hour="HH:mm"
+        android:orientation="vertical"
+        android:background="@drawable/bg_floating_handle"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:gravity="center"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:clickable="true"
+        android:focusable="true">
+
+        <!-- 윗줄: 날짜 및 요일 -->
+        <TextClock
+            android:id="@+id/handleDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="M월 d일 (E)"
+            android:format24Hour="M월 d일 (E)"
+            android:textColor="#3DDC84"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <!-- 아랫줄: 현재 시간 -->
+        <TextClock
+            android:id="@+id/handleTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:format12Hour="h:mm a"
+            android:format24Hour="HH:mm"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </FrameLayout>

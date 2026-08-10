@@ -9,7 +9,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp">
+        android:layout_marginBottom="24dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -23,12 +23,14 @@
         <!-- 설정 창 닫기 버튼 -->
         <ImageView
             android:id="@+id/btnCloseSettings"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_alignParentEnd="true"
             android:background="@drawable/bg_round_btn"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:scaleType="centerInside" />
+            android:scaleType="centerInside"
+            android:clickable="true"
+            android:focusable="true" />
     </RelativeLayout>
 
     <!-- 설정 항목 리스트 -->
@@ -42,28 +44,71 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- [특급 기능] 비주얼 매크로 좌표 피커 실행 대형 버튼 -->
+            <LinearLayout
+                android:id="@+id/btnOpenVisualPicker"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:background="@drawable/bg_dock_btn"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎯  화면에서 버튼 위치 직접 찍기 (조준경 피커)"
+                    android:textColor="#3DDC84"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- [안정성] 배터리 최적화 제외 설정 버튼 -->
+            <LinearLayout
+                android:id="@+id/btnBatteryOptimization"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_dock_btn"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="24dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔋  배터리 최적화 제외 (상시 실행/꺼짐 방지)"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
             <!-- 1. 숨김 버튼 높이 조절 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="16dp">
+                android:layout_marginTop="8dp">
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="숨김 버튼 높이 (Y축)"
+                    android:text="플로팅 위젯 높이 (Y축)"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp" />
+                    android:textSize="18sp" />
                 <TextView
                     android:id="@+id/tvFloatingY"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="#3DDC84"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekFloatingY" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="500" />
+            <SeekBar android:id="@+id/seekFloatingY" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="500" />
 
             <!-- 팝업 메뉴 위치 조절 -->
             <LinearLayout
@@ -76,16 +121,16 @@
                     android:layout_weight="1"
                     android:text="팝업 메뉴 위치 (Y축)"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp" />
+                    android:textSize="18sp" />
                 <TextView
                     android:id="@+id/tvPopupY"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="#3DDC84"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekPopupY" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="800" />
+            <SeekBar android:id="@+id/seekPopupY" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="800" />
 
             <!-- 2. 메뉴 자동 닫힘 시간 조절 -->
             <LinearLayout
@@ -98,66 +143,66 @@
                     android:layout_weight="1"
                     android:text="메뉴 자동 닫힘 대기 시간"
                     android:textColor="#FFFFFF"
-                    android:textSize="20sp" />
+                    android:textSize="18sp" />
                 <TextView
                     android:id="@+id/tvAutoClose"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="#3DDC84"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekAutoClose" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="30" />
+            <SeekBar android:id="@+id/seekAutoClose" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="30" />
 
             <!-- 3. 티맵 터치 X 좌표 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="티맵 매크로 [X 좌표]" android:textColor="#FFFFFF" android:textSize="20sp" />
-                <TextView android:id="@+id/tvTmapX" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="티맵 매크로 [X 좌표]" android:textColor="#FFFFFF" android:textSize="18sp" />
+                <TextView android:id="@+id/tvTmapX" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="18sp" android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekTmapX" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="2500" />
+            <SeekBar android:id="@+id/seekTmapX" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="2500" />
 
             <!-- 4. 티맵 터치 Y 좌표 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="티맵 매크로 [Y 좌표]" android:textColor="#FFFFFF" android:textSize="20sp" />
-                <TextView android:id="@+id/tvTmapY" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="티맵 매크로 [Y 좌표]" android:textColor="#FFFFFF" android:textSize="18sp" />
+                <TextView android:id="@+id/tvTmapY" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="18sp" android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekTmapY" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="2500" />
+            <SeekBar android:id="@+id/seekTmapY" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="2500" />
 
-            <!-- 5. 숨김버튼 시계 크기 -->
+            <!-- 5. 플로팅 위젯 시계 크기 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="숨김버튼 시계 크기" android:textColor="#FFFFFF" android:textSize="20sp" />
-                <TextView android:id="@+id/tvHandleClockSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="플로팅 위젯 시간 크기" android:textColor="#FFFFFF" android:textSize="18sp" />
+                <TextView android:id="@+id/tvHandleClockSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="18sp" android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekHandleClockSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="40" android:min="10" />
+            <SeekBar android:id="@+id/seekHandleClockSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="40" android:min="10" />
 
             <!-- 6. 팝업메뉴 시계 크기 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업메뉴 시계 크기" android:textColor="#FFFFFF" android:textSize="20sp" />
-                <TextView android:id="@+id/tvPopupClockSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업메뉴 시계 크기" android:textColor="#FFFFFF" android:textSize="18sp" />
+                <TextView android:id="@+id/tvPopupClockSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="18sp" android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekPopupClockSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="100" android:min="20" />
+            <SeekBar android:id="@+id/seekPopupClockSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="100" android:min="20" />
 
             <!-- 7. 팝업메뉴 아이콘 크기 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업메뉴 아이콘 크기" android:textColor="#FFFFFF" android:textSize="20sp" />
-                <TextView android:id="@+id/tvPopupIconSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="20sp" android:textStyle="bold" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업메뉴 아이콘 크기" android:textColor="#FFFFFF" android:textSize="18sp" />
+                <TextView android:id="@+id/tvPopupIconSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="18sp" android:textStyle="bold" />
             </LinearLayout>
-            <SeekBar android:id="@+id/seekPopupIconSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:layout_marginBottom="32dp" android:max="150" android:min="50" />
+            <SeekBar android:id="@+id/seekPopupIconSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="24dp" android:max="150" android:min="50" />
 
             <!-- 안내 문구 -->
             <TextView
