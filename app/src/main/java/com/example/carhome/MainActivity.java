@@ -424,7 +424,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     public void launchApp(String packageName) {
         Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
             // 실행한 앱이 티맵일 경우 팝업창 모드 확인 및 매크로 발동
             if ("com.skt.tmap.ku".equals(packageName)) {
@@ -432,7 +432,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
 
                 if (popupEnabled) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
                     int left = prefs.getInt("tmap_popup_x", 1050);
                     int top = prefs.getInt("tmap_popup_y", 50);

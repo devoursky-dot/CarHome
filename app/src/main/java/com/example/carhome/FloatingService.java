@@ -393,14 +393,13 @@ public class FloatingService extends Service {
     private void launchApp(String packageName) {
         Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
             if ("com.skt.tmap.ku".equals(packageName)) {
                 SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
                 boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
 
                 if (popupEnabled) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
 
                     int left = prefs.getInt("tmap_popup_x", 1050);
                     int top = prefs.getInt("tmap_popup_y", 50);
