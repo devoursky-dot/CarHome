@@ -57,14 +57,21 @@ public class SettingsActivity extends AppCompatActivity {
         currentX = prefs.getInt("tmap_x", 1130);
         currentY = prefs.getInt("tmap_y", 70);
 
-        // 1. 티맵 팝업창 모드 스위치 바인딩
+        // 1. 티맵 실행 화면 모드 (전체화면 vs 팝업창 모드 선택)
         @SuppressLint("UseSwitchCompatOrMaterialCode")
         Switch switchTmapPopupMode = findViewById(R.id.switchTmapPopupMode);
+        TextView tvTmapModeDescription = findViewById(R.id.tvTmapModeDescription);
+        View layoutTmapPopupSliders = findViewById(R.id.layoutTmapPopupSliders);
+
+        boolean isPopup = prefs.getBoolean("tmap_popup_enabled", true);
         if (switchTmapPopupMode != null) {
-            switchTmapPopupMode.setChecked(prefs.getBoolean("tmap_popup_enabled", true));
+            switchTmapPopupMode.setChecked(isPopup);
+            updateTmapModeUI(isPopup, tvTmapModeDescription, layoutTmapPopupSliders);
+
             switchTmapPopupMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 prefs.edit().putBoolean("tmap_popup_enabled", isChecked).apply();
-                Toast.makeText(this, isChecked ? "🚗 티맵 팝업창(플로팅) 모드 ON" : "🚗 티맵 전체화면 모드 ON", Toast.LENGTH_SHORT).show();
+                updateTmapModeUI(isChecked, tvTmapModeDescription, layoutTmapPopupSliders);
+                Toast.makeText(this, isChecked ? "🚗 티맵 실행 모드: [팝업창(플로팅)]으로 설정됨" : "🚗 티맵 실행 모드: [전체화면(Full Screen)]으로 설정됨", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -158,6 +165,21 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 설정 화면 열릴 때 빨간색 미리보기 조준원 초기 표시
         showPreviewCircle(currentX, currentY);
+    }
+
+    private void updateTmapModeUI(boolean isPopup, TextView tvDesc, View slidersLayout) {
+        if (tvDesc != null) {
+            if (isPopup) {
+                tvDesc.setText("현재: 팝업창(플로팅) 모드로 실행 중");
+                tvDesc.setTextColor(Color.parseColor("#3DDC84")); // 초록색
+            } else {
+                tvDesc.setText("현재: 전체화면(Full Screen) 모드로 실행 중");
+                tvDesc.setTextColor(Color.parseColor("#64B5F6")); // 하늘색
+            }
+        }
+        if (slidersLayout != null) {
+            slidersLayout.setVisibility(isPopup ? View.VISIBLE : View.GONE);
+        }
     }
 
     // 설정 화면 위에 실시간 빨간색 조준원 오버레이 띄우기 (독립 실행 보장)
