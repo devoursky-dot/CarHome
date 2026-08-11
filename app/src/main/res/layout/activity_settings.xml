@@ -346,17 +346,7 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seekHandleClockSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" android:max="40" android:min="10" />
 
-            <!-- 6. 팝업메뉴 시계 크기 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업메뉴 시계 크기" android:textColor="#FFFFFF" android:textSize="17sp" />
-                <TextView android:id="@+id/tvPopupClockSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="17sp" android:textStyle="bold" />
-            </LinearLayout>
-            <SeekBar android:id="@+id/seekPopupClockSize" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:layout_marginBottom="20dp" android:max="100" android:min="20" />
-
-            <!-- 7. 팝업메뉴 아이콘 크기 -->
+            <!-- 6. 팝업메뉴 아이콘 크기 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

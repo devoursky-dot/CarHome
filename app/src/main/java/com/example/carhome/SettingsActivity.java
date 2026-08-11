@@ -75,7 +75,6 @@ public class SettingsActivity extends AppCompatActivity {
         setupStepButton(R.id.btnTmapYPlus10, R.id.seekTmapY, 10);
 
         setupSeekBar(R.id.seekHandleClockSize, R.id.tvHandleClockSize, "handle_clock_size", prefs.getInt("handle_clock_size", 18), " sp");
-        setupSeekBar(R.id.seekPopupClockSize, R.id.tvPopupClockSize, "popup_clock_size", prefs.getInt("popup_clock_size", 50), " sp");
         setupSeekBar(R.id.seekPopupIconSize, R.id.tvPopupIconSize, "popup_icon_size", prefs.getInt("popup_icon_size", 80), " dp");
 
         // 2. 비주얼 매크로 좌표 피커(조준경) 실행 버튼
@@ -242,7 +241,7 @@ public class SettingsActivity extends AppCompatActivity {
                 }
 
                 if (prefKey.equals("floating_y") || prefKey.equals("popup_y") ||
-                        prefKey.equals("handle_clock_size") || prefKey.equals("popup_clock_size") ||
+                        prefKey.equals("handle_clock_size") ||
                         prefKey.equals("popup_icon_size")) {
                     Intent intent = new Intent("com.example.carhome.UPDATE_SETTINGS");
                     intent.putExtra("key", prefKey);
