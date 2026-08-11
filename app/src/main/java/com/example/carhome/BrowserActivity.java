@@ -9,11 +9,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,6 +31,10 @@ public class BrowserActivity extends AppCompatActivity {
 
     private WebView webView;
     private TextView btnAdBlockStatus;
+    private FrameLayout fullscreenContainer;
+    private View customView;
+    private WebChromeClient.CustomViewCallback customViewCallback;
+
     private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
 
@@ -84,15 +90,29 @@ public class BrowserActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_browser);
         webView = findViewById(R.id.webView);
+        fullscreenContainer = findViewById(R.id.fullscreenContainer);
         btnAdBlockStatus = findViewById(R.id.btnAdBlockStatus);
 
+        // 1. 뒤로가기 버튼 연결
+        TextView btnBrowserBack = findViewById(R.id.btnBrowserBack);
+        if (btnBrowserBack != null) {
+            btnBrowserBack.setOnClickListener(v -> handleBackNavigation());
+        }
+
+        // 2. 광고 차단 상태 버튼
         if (btnAdBlockStatus != null) {
             btnAdBlockStatus.setOnClickListener(v -> {
                 Toast.makeText(this, "🛡️ 유튜브 실시간 광고 차단 엔진 작동 중 (자동 스킵 활성)", Toast.LENGTH_SHORT).show();
             });
         }
 
-        // 1. 툴바 배속 버튼 연결
+        // 3. 전체화면 토글 버튼
+        TextView btnFullscreen = findViewById(R.id.btnFullscreen);
+        if (btnFullscreen != null) {
+            btnFullscreen.setOnClickListener(v -> toggleFullscreen());
+        }
+
+        // 4. 툴바 배속 버튼 연결
         TextView btnSpeed1x = findViewById(R.id.btnSpeed1x);
         TextView btnSpeed1_5x = findViewById(R.id.btnSpeed1_5x);
         TextView btnSpeed2x = findViewById(R.id.btnSpeed2x);
@@ -101,7 +121,7 @@ public class BrowserActivity extends AppCompatActivity {
         btnSpeed1_5x.setOnClickListener(v -> setVideoSpeed(1.5f));
         btnSpeed2x.setOnClickListener(v -> setVideoSpeed(2.0f));
 
-        // 2. 툴바 시간 건너뛰기 버튼 연결
+        // 5. 툴바 시간 건너뛰기 버튼 연결
         TextView btnRewind = findViewById(R.id.btnRewind);
         TextView btnForward = findViewById(R.id.btnForward);
         TextView btnRewind10 = findViewById(R.id.btnRewind10);
@@ -112,7 +132,7 @@ public class BrowserActivity extends AppCompatActivity {
         btnRewind10.setOnClickListener(v -> skipVideo(-10));
         btnForward10.setOnClickListener(v -> skipVideo(10));
 
-        // 3. 툴바 해상도 조절 버튼 연결 (360P, 480P, 720P, 1080P)
+        // 6. 툴바 해상도 조절 버튼 연결 (360P, 480P, 720P, 1080P)
         TextView btnRes360 = findViewById(R.id.btnRes360);
         TextView btnRes480 = findViewById(R.id.btnRes480);
         TextView btnRes720 = findViewById(R.id.btnRes720);
@@ -132,6 +152,40 @@ public class BrowserActivity extends AppCompatActivity {
 
         // 자바스크립트 브릿지 등록 (광고 차단 동작 알림용)
         webView.addJavascriptInterface(new AdBlockBridge(), "AndroidAdBlock");
+
+        // [HTML5 전체화면 비디오 재생 지원을 위한 WebChromeClient 장착]
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onShowCustomView(View view, CustomViewCallback callback) {
+                if (customView != null) {
+                    onHideCustomView();
+                    return;
+                }
+                customView = view;
+                customViewCallback = callback;
+
+                findViewById(R.id.browserRootLayout).setVisibility(View.GONE);
+                if (fullscreenContainer != null) {
+                    fullscreenContainer.addView(customView, new FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                    fullscreenContainer.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onHideCustomView() {
+                if (fullscreenContainer != null && customView != null) {
+                    fullscreenContainer.removeView(customView);
+                    fullscreenContainer.setVisibility(View.GONE);
+                }
+                customView = null;
+                if (customViewCallback != null) {
+                    customViewCallback.onCustomViewHidden();
+                    customViewCallback = null;
+                }
+                findViewById(R.id.browserRootLayout).setVisibility(View.VISIBLE);
+            }
+        });
 
         webView.setWebViewClient(new WebViewClient() {
             // [강력한 광고 차단 엔진 1단계: 광고 서버 네트워크 패킷 원천 차단]
@@ -180,6 +234,60 @@ public class BrowserActivity extends AppCompatActivity {
 
         // 광고 차단 상시 감시 스케줄러 시작
         adBlockHandler.postDelayed(adBlockPeriodicRunnable, 1000);
+    }
+
+    // 뒤로가기 통합 처리 메서드
+    private void handleBackNavigation() {
+        if (customView != null) {
+            // 1. 전체화면 모드일 때 ➔ 전체화면 닫기
+            if (webView != null && webView.getWebChromeClient() != null) {
+                if (fullscreenContainer != null && customView != null) {
+                    fullscreenContainer.removeView(customView);
+                    fullscreenContainer.setVisibility(View.GONE);
+                }
+                customView = null;
+                if (customViewCallback != null) {
+                    customViewCallback.onCustomViewHidden();
+                    customViewCallback = null;
+                }
+                findViewById(R.id.browserRootLayout).setVisibility(View.VISIBLE);
+            }
+        } else if (webView != null && webView.canGoBack()) {
+            // 2. 브라우저 이전 페이지가 있을 때 ➔ 이전 페이지로 이동
+            webView.goBack();
+        } else {
+            // 3. 더 이상 이전 페이지가 없을 때 ➔ 브라우저 종료 후 홈(대시보드)으로 복귀
+            finish();
+        }
+    }
+
+    // 전체화면 토글 메서드
+    private void toggleFullscreen() {
+        if (webView != null) {
+            String js = "(function() {" +
+                    "  var p = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
+                    "  var v = document.querySelector('video');" +
+                    "  var fullBtn = document.querySelector('.ytp-fullscreen-button, button.fullscreen-icon, button[aria-label*=\"전체 화면\"], button[aria-label*=\"Full screen\"]');" +
+                    "  if (fullBtn) {" +
+                    "    fullBtn.click();" +
+                    "  } else if (p && typeof p.toggleFullscreen === 'function') {" +
+                    "    p.toggleFullscreen();" +
+                    "  } else if (v) {" +
+                    "    if (document.fullscreenElement) {" +
+                    "      if (document.exitFullscreen) document.exitFullscreen();" +
+                    "    } else {" +
+                    "      if (v.requestFullscreen) v.requestFullscreen();" +
+                    "      else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen();" +
+                    "    }" +
+                    "  }" +
+                    "})();";
+            webView.evaluateJavascript(js, null);
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        handleBackNavigation();
     }
 
     // 유튜브 광고를 완벽하게 차단하고 스킵하는 복합 스크립트 주입
@@ -297,12 +405,12 @@ public class BrowserActivity extends AppCompatActivity {
             rootLayout.setOrientation(LinearLayout.HORIZONTAL);
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                    (int) (96 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 96dp로 설정
+                    (int) (105 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 105dp로 설정
                     LinearLayout.LayoutParams.MATCH_PARENT));
 
             // 세 그룹도 모두 세로 기둥 방향으로 전환하여 1줄로 통합 배치
             menuGroup1.setOrientation(LinearLayout.VERTICAL);
-            menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+            menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.4f));
             menuGroup2.setOrientation(LinearLayout.VERTICAL);
             menuGroup2.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
             menuGroup3.setOrientation(LinearLayout.VERTICAL);
@@ -319,7 +427,7 @@ public class BrowserActivity extends AppCompatActivity {
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    (int) (180 * getResources().getDisplayMetrics().density))); // 3줄 180dp로 컴팩트하게 축소
+                    (int) (180 * getResources().getDisplayMetrics().density))); // 3줄 180dp
 
             // 세 그룹을 가로 줄로 전환하여 위아래 3층으로 배치
             menuGroup1.setOrientation(LinearLayout.HORIZONTAL);
@@ -344,7 +452,7 @@ public class BrowserActivity extends AppCompatActivity {
             LinearLayout.LayoutParams params = isLandscape
                     ? new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f)
                     : new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
-            params.setMargins(6, 6, 6, 6);
+            params.setMargins(4, 4, 4, 4);
             child.setLayoutParams(params);
         }
     }

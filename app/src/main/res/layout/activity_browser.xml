@@ -1,220 +1,267 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/browserRootLayout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#000000">
 
+    <!-- 기본 브라우저 레이아웃 -->
     <LinearLayout
-        android:id="@+id/menuLayout"
+        android:id="@+id/browserRootLayout"
         android:layout_width="match_parent"
-        android:layout_height="180dp"
+        android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#121212"
-        android:gravity="center">
+        android:background="#000000">
 
-        <!-- 첫 번째 줄 (Group 1): [🛡️ 광고차단 상태 배지] & 배속 조절 -->
+        <!-- 상단 3단 툴바 -->
         <LinearLayout
-            android:id="@+id/menuGroup1"
+            android:id="@+id/menuLayout"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+            android:layout_height="180dp"
+            android:orientation="vertical"
+            android:background="#121212"
+            android:gravity="center">
 
-            <!-- 광고 차단 실시간 상태 표시 배지 버튼 -->
-            <TextView
-                android:id="@+id/btnAdBlockStatus"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+            <!-- 첫 번째 줄 (Group 1): 뒤로가기, 광고차단 배지, 전체화면, 배속 조절 -->
+            <LinearLayout
+                android:id="@+id/menuGroup1"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="🛡️ 차단중"
-                android:textColor="#3DDC84"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/btnSpeed1x"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="1X"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
+                <!-- 1. 뒤로가기 버튼 -->
+                <TextView
+                    android:id="@+id/btnBrowserBack"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="◀ 뒤로"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-            <TextView
-                android:id="@+id/btnSpeed1_5x"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="1.5X"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
+                <!-- 2. 광고 차단 실시간 상태 표시 배지 -->
+                <TextView
+                    android:id="@+id/btnAdBlockStatus"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="🛡️ 차단중"
+                    android:textColor="#3DDC84"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
 
-            <TextView
-                android:id="@+id/btnSpeed2x"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+                <!-- 3. 전체화면 토글 버튼 -->
+                <TextView
+                    android:id="@+id/btnFullscreen"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1.1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="⛶ 전체화면"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <!-- 4. 배속 조절 버튼들 -->
+                <TextView
+                    android:id="@+id/btnSpeed1x"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.9"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="1X"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnSpeed1_5x"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.9"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="1.5X"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnSpeed2x"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="0.9"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="2X"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 두 번째 줄 (Group 2): 앞뒤 이동 전용 (1분, 10초) -->
+            <LinearLayout
+                android:id="@+id/menuGroup2"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
                 android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="2X"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnRewind"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="&lt;&lt; 1분"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnRewind10"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="&lt; 10초"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnForward10"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="10초 &gt;"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnForward"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="1분 &gt;&gt;"
+                    android:textColor="#FFFFFF"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 세 번째 줄 (Group 3): 해상도 조절 (360P, 480P, 720P, 1080P) -->
+            <LinearLayout
+                android:id="@+id/menuGroup3"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnRes360"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="360P"
+                    android:textColor="#3DDC84"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnRes480"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="480P"
+                    android:textColor="#3DDC84"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnRes720"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="720P"
+                    android:textColor="#3DDC84"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btnRes1080"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="1080P"
+                    android:textColor="#3DDC84"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- 두 번째 줄 (Group 2): 앞뒤 이동 전용 (1분, 10초) -->
-        <LinearLayout
-            android:id="@+id/menuGroup2"
+        <!-- 웹뷰 영역 -->
+        <WebView
+            android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/btnRewind"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="&lt;&lt; 1분"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/btnRewind10"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="&lt; 10초"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/btnForward10"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="10초 &gt;"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/btnForward"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="1분 &gt;&gt;"
-                android:textColor="#FFFFFF"
-                android:textSize="17sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-        </LinearLayout>
-
-        <!-- 세 번째 줄 (Group 3): 해상도 조절 (360P, 480P, 720P, 1080P) -->
-        <LinearLayout
-            android:id="@+id/menuGroup3"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/btnRes360"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="360P"
-                android:textColor="#3DDC84"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/btnRes480"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="480P"
-                android:textColor="#3DDC84"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/btnRes720"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="720P"
-                android:textColor="#3DDC84"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-
-            <TextView
-                android:id="@+id/btnRes1080"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@drawable/bg_round_btn"
-                android:text="1080P"
-                android:textColor="#3DDC84"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true" />
-        </LinearLayout>
+            android:layout_weight="1" />
     </LinearLayout>
 
-    <!-- 웹뷰 영역 -->
-    <WebView
-        android:id="@+id/webView"
+    <!-- HTML5 비디오 전체화면 전용 풀스크린 컨테이너 -->
+    <FrameLayout
+        android:id="@+id/fullscreenContainer"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:visibility="gone" />
+</FrameLayout>
