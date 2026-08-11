@@ -2,6 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:keepScreenOn="true"
     android:background="#000000">
 
     <!-- 기본 브라우저 레이아웃 -->
@@ -10,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:keepScreenOn="true"
         android:background="#000000">
 
         <!-- 상단 3단 툴바 (깔끔한 4x3 균등 배치) -->
@@ -223,14 +225,16 @@
             android:id="@+id/webView"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:keepScreenOn="true"
             android:layout_weight="1" />
     </LinearLayout>
 
-    <!-- HTML5 비디오 전체화면 전용 풀스크린 컨테이너 -->
+    <!-- HTML5 비디오 전체화면 전용 풀스크린 컨테이너 (화면 꺼짐 방지) -->
     <FrameLayout
         android:id="@+id/fullscreenContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:keepScreenOn="true"
         android:background="#000000"
         android:visibility="gone" />
 </FrameLayout>

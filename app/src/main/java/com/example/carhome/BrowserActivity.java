@@ -10,7 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -82,6 +82,9 @@ public class BrowserActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // [화면 꺼짐 및 화면 잠금 방지 플래그 상시 유지]
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         // 키보드(IME)와 뷰가 정상적으로 리사이즈되도록 설정하면서 상단 상태바 숨김
         WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
@@ -171,8 +174,13 @@ public class BrowserActivity extends AppCompatActivity {
                 customView = view;
                 customViewCallback = callback;
 
+                // [전체화면 재생 시에도 화면 꺼짐/잠금 완벽 방지]
+                view.setKeepScreenOn(true);
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
                 findViewById(R.id.browserRootLayout).setVisibility(View.GONE);
                 if (fullscreenContainer != null) {
+                    fullscreenContainer.setKeepScreenOn(true);
                     fullscreenContainer.addView(customView, new FrameLayout.LayoutParams(
                             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
                     fullscreenContainer.setVisibility(View.VISIBLE);
@@ -190,6 +198,7 @@ public class BrowserActivity extends AppCompatActivity {
                     customViewCallback.onCustomViewHidden();
                     customViewCallback = null;
                 }
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 findViewById(R.id.browserRootLayout).setVisibility(View.VISIBLE);
             }
         });
@@ -241,6 +250,13 @@ public class BrowserActivity extends AppCompatActivity {
 
         // 광고 차단 상시 감시 스케줄러 시작
         adBlockHandler.postDelayed(adBlockPeriodicRunnable, 1000);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 브라우저 포커스 복귀 시 화면 꺼짐 방지 플래그 재확인
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     // 뒤로가기 통합 처리 메서드 (태블릿 뒤로가기 버튼 지원)
