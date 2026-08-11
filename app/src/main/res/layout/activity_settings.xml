@@ -178,7 +178,7 @@
                     android:layout_marginTop="6dp"
                     android:layout_marginBottom="12dp">
                     <TextView android:id="@+id/btnTmapPopupWMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                    <SeekBar android:id="@+id/seekTmapPopupW" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" android:min="300" />
+                    <SeekBar android:id="@+id/seekTmapPopupW" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" android:min="100" />
                     <TextView android:id="@+id/btnTmapPopupWPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
                 </LinearLayout>
 
@@ -198,7 +198,7 @@
                     android:layout_marginTop="6dp"
                     android:layout_marginBottom="4dp">
                     <TextView android:id="@+id/btnTmapPopupHMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                    <SeekBar android:id="@+id/seekTmapPopupH" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" android:min="300" />
+                    <SeekBar android:id="@+id/seekTmapPopupH" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" android:min="100" />
                     <TextView android:id="@+id/btnTmapPopupHPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
                 </LinearLayout>
             </LinearLayout>
