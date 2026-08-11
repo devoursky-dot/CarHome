@@ -92,24 +92,34 @@ public class MacroAccessibilityService extends AccessibilityService {
 
     // 티맵 실행 시 지정된 시간에 확실하게 닫기/확인 버튼을 누르는 자동 매크로 스케줄러
     public void scheduleTmapMacro(float x, float y) {
+        scheduleTmapMacro(x, y, 6, 3);
+    }
+
+    public void scheduleTmapMacro(float x, float y, int count, int intervalSec) {
         if (macroHandler == null) {
             macroHandler = new Handler(Looper.getMainLooper());
         }
         macroHandler.removeCallbacksAndMessages(null);
 
-        // 티맵 로딩 속도에 맞춰 3초, 6초, 9초, 14초, 20초, 30초마다 연속 클릭 시도
-        int[] delays = {3000, 6000, 9000, 14000, 20000, 30000};
+        if (count <= 0) {
+            Log.d(TAG, "Macro count is 0, skipping Tmap macro");
+            return;
+        }
 
-        for (int delay : delays) {
+        int intervalMs = Math.max(500, intervalSec * 1000);
+
+        for (int i = 1; i <= count; i++) {
+            final int currentAttempt = i;
+            long delay = (long) i * intervalMs;
             macroHandler.postDelayed(() -> {
-                Log.d(TAG, "Executing scheduled Tmap click at (" + x + ", " + y + ") delay=" + delay);
+                Log.d(TAG, "Executing scheduled Tmap click #" + currentAttempt + "/" + count + " at (" + x + ", " + y + ")");
                 performClick(x, y);
             }, delay);
         }
 
         macroHandler.postDelayed(() -> {
-            Toast.makeText(this, "티맵 안전주행 자동확인 완료! 🤖", Toast.LENGTH_SHORT).show();
-        }, 30500);
+            Toast.makeText(this, "티맵 자동확인 매크로 완료! (" + count + "회 실행됨) 🤖", Toast.LENGTH_SHORT).show();
+        }, (long) count * intervalMs + 500);
     }
 
     // 화면 위에 시각적인 표적(빨간색 원)을 실시간으로 그려주는 메서드

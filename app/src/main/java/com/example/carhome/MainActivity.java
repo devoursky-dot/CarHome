@@ -357,12 +357,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     // [전체 앱 서랍 다이얼로그] 구현
     private void executeTmapMacro() {
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+        int macroCount = prefs.getInt("tmap_macro_count", 6);
+        if (macroCount <= 0) {
+            // 0회 설정 시 매크로 실행 안 함
+            return;
+        }
+
         float tmapX = prefs.getInt("tmap_x", 1130);
         float tmapY = prefs.getInt("tmap_y", 70);
+        int intervalSec = prefs.getInt("tmap_macro_interval", 3);
 
         if (MacroAccessibilityService.instance != null) {
-            Toast.makeText(this, "티맵 안전주행 자동확인 매크로 가동 중... 🤖", Toast.LENGTH_SHORT).show();
-            MacroAccessibilityService.instance.scheduleTmapMacro(tmapX, tmapY);
+            Toast.makeText(this, "티맵 안전주행 자동확인 매크로 가동 중... 🤖 (" + macroCount + "회)", Toast.LENGTH_SHORT).show();
+            MacroAccessibilityService.instance.scheduleTmapMacro(tmapX, tmapY, macroCount, intervalSec);
         } else {
             Toast.makeText(this, "접근성 서비스가 꺼져 있습니다. 상단 🔴을 눌러 켜주세요!", Toast.LENGTH_SHORT).show();
         }

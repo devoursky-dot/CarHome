@@ -228,12 +228,12 @@
             </LinearLayout>
 
             <!-- ============================================================ -->
-            <!-- 🎯 티맵 매크로 좌표 설정 (1단위 정밀 조절 통일) -->
+            <!-- 🎯 티맵 매크로 설정 (좌표 / 클릭 횟수 / 클릭 간격) -->
             <!-- ============================================================ -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🎯  티맵 매크로 자동 터치 좌표"
+                android:text="🎯  티맵 매크로 자동 터치 설정"
                 android:textColor="#FFFFFF"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -277,6 +277,46 @@
                 <TextView android:id="@+id/btnTmapYMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
                 <SeekBar android:id="@+id/seekTmapY" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" />
                 <TextView android:id="@+id/btnTmapYPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 티맵 매크로 클릭 횟수 (0회: 매크로 끔) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="매크로 [클릭 횟수] (0회 설정 시 매크로 꺼짐)" android:textColor="#FFFFFF" android:textSize="15sp" />
+                <TextView android:id="@+id/tvTmapMacroCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="12dp">
+                <TextView android:id="@+id/btnTmapMacroCountMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
+                <SeekBar android:id="@+id/seekTmapMacroCount" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="20" android:min="0" />
+                <TextView android:id="@+id/btnTmapMacroCountPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 티맵 매크로 클릭 간격 (초) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="매크로 [클릭 간격] (초 단위)" android:textColor="#FFFFFF" android:textSize="15sp" />
+                <TextView android:id="@+id/tvTmapMacroInterval" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="12dp">
+                <TextView android:id="@+id/btnTmapMacroIntervalMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
+                <SeekBar android:id="@+id/seekTmapMacroInterval" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="10" android:min="1" />
+                <TextView android:id="@+id/btnTmapMacroIntervalPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
             </LinearLayout>
 
             <!-- 설정창 내 즉시 테스트 클릭 버튼 -->

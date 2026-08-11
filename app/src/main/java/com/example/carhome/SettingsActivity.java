@@ -92,7 +92,7 @@ public class SettingsActivity extends AppCompatActivity {
         setupStepButton(R.id.btnTmapPopupHMinus1, R.id.seekTmapPopupH, -1);
         setupStepButton(R.id.btnTmapPopupHPlus1, R.id.seekTmapPopupH, 1);
 
-        // 3. 티맵 매크로 좌표 슬라이더 및 1단위 세부 조절 버튼 연결
+        // 3. 티맵 매크로 좌표 / 클릭 횟수 / 클릭 간격 슬라이더 및 1단위 세부 조절 버튼 연결
         setupSeekBar(R.id.seekTmapX, R.id.tvTmapX, "tmap_x", currentX, " px");
         setupStepButton(R.id.btnTmapXMinus1, R.id.seekTmapX, -1);
         setupStepButton(R.id.btnTmapXPlus1, R.id.seekTmapX, 1);
@@ -100,6 +100,14 @@ public class SettingsActivity extends AppCompatActivity {
         setupSeekBar(R.id.seekTmapY, R.id.tvTmapY, "tmap_y", currentY, " px");
         setupStepButton(R.id.btnTmapYMinus1, R.id.seekTmapY, -1);
         setupStepButton(R.id.btnTmapYPlus1, R.id.seekTmapY, 1);
+
+        setupSeekBar(R.id.seekTmapMacroCount, R.id.tvTmapMacroCount, "tmap_macro_count", prefs.getInt("tmap_macro_count", 6), " 회");
+        setupStepButton(R.id.btnTmapMacroCountMinus1, R.id.seekTmapMacroCount, -1);
+        setupStepButton(R.id.btnTmapMacroCountPlus1, R.id.seekTmapMacroCount, 1);
+
+        setupSeekBar(R.id.seekTmapMacroInterval, R.id.tvTmapMacroInterval, "tmap_macro_interval", prefs.getInt("tmap_macro_interval", 3), " 초");
+        setupStepButton(R.id.btnTmapMacroIntervalMinus1, R.id.seekTmapMacroInterval, -1);
+        setupStepButton(R.id.btnTmapMacroIntervalPlus1, R.id.seekTmapMacroInterval, 1);
 
         // 4. 플로팅 위젯 & 팝업 메뉴 슬라이더 및 1단위 세부 조절 버튼 연결
         setupSeekBar(R.id.seekFloatingY, R.id.tvFloatingY, "floating_y", prefs.getInt("floating_y", 132), " px");
@@ -281,14 +289,23 @@ public class SettingsActivity extends AppCompatActivity {
         if (seekBar == null || textView == null) return;
 
         seekBar.setProgress(initialValue);
-        textView.setText(initialValue + suffix);
+        if (prefKey.equals("tmap_macro_count")) {
+            textView.setText(initialValue == 0 ? "0 회 (매크로 꺼짐)" : initialValue + " 회");
+        } else {
+            textView.setText(initialValue + suffix);
+        }
 
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (prefKey.equals("auto_close") && progress < 1) progress = 1;
+                if (prefKey.equals("tmap_macro_interval") && progress < 1) progress = 1;
 
-                textView.setText(progress + suffix);
+                if (prefKey.equals("tmap_macro_count")) {
+                    textView.setText(progress == 0 ? "0 회 (매크로 꺼짐)" : progress + " 회");
+                } else {
+                    textView.setText(progress + suffix);
+                }
 
                 SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
                 prefs.edit().putInt(prefKey, progress).apply();
