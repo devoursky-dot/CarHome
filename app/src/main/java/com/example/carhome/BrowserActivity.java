@@ -3,9 +3,11 @@ package com.example.carhome;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -26,6 +28,32 @@ import java.io.ByteArrayInputStream;
 public class BrowserActivity extends AppCompatActivity {
 
     private WebView webView;
+    private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
+    private long lastAdToastTime = 0;
+
+    // 안드로이드 - 웹뷰 간 실시간 광고 차단 통신 브릿지
+    public class AdBlockBridge {
+        @JavascriptInterface
+        public void onAdSkipped(String reason) {
+            long now = System.currentTimeMillis();
+            if (now - lastAdToastTime > 2500) { // 알림 도배 방지 (2.5초 간격)
+                lastAdToastTime = now;
+                runOnUiThread(() -> {
+                    Toast.makeText(BrowserActivity.this, "🛡️ [광고 차단] 유튜브 광고 즉시 건너뛰기 완료! ⚡", Toast.LENGTH_SHORT).show();
+                });
+            }
+        }
+    }
+
+    private final Runnable adBlockPeriodicRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (webView != null) {
+                injectAdBlocker(webView);
+                adBlockHandler.postDelayed(this, 1000); // 1초마다 지속 주입하여 SPA(단일페이지) 영상 전환 시에도 100% 감시 유지
+            }
+        }
+    };
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -85,6 +113,9 @@ public class BrowserActivity extends AppCompatActivity {
         settings.setMediaPlaybackRequiresUserGesture(false); // 동영상 자동 재생 허용
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
+        // 자바스크립트 브릿지 등록 (광고 차단 동작 알림용)
+        webView.addJavascriptInterface(new AdBlockBridge(), "AndroidAdBlock");
+
         webView.setWebViewClient(new WebViewClient() {
             // [강력한 광고 차단 엔진 1단계: 광고 서버 네트워크 패킷 원천 차단]
             private final String[] AD_HOSTS = {
@@ -116,21 +147,8 @@ public class BrowserActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
-                injectAdBlocker(view);
-            }
-
-            // [강력한 광고 차단 엔진 2단계: CSS 배너 광고 숨김 + 초고속 광고 스킵 매크로 주입]
-            @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                injectAdBlocker(view);
-            }
-
-            @Override
-            public void onLoadResource(WebView view, String url) {
-                super.onLoadResource(view, url);
                 injectAdBlocker(view);
             }
         });
@@ -142,6 +160,12 @@ public class BrowserActivity extends AppCompatActivity {
 
         // 앱 실행 시 현재 화면 방향(가로/세로)에 맞춰 레이아웃 동적 초기화
         updateMenuLayout(getResources().getConfiguration().orientation);
+
+        // 광고 차단 상시 감시 스케줄러 시작
+        adBlockHandler.postDelayed(adBlockPeriodicRunnable, 1000);
+
+        // 실행 시 차단기 활성화 알림 표시
+        Toast.makeText(this, "🛡️ 유튜브 실시간 광고 차단 엔진 활성화됨", Toast.LENGTH_SHORT).show();
     }
 
     // 유튜브 광고를 완벽하게 차단하고 스킵하는 복합 스크립트 주입
@@ -150,35 +174,36 @@ public class BrowserActivity extends AppCompatActivity {
         String adBlockJs =
                 "(function() {" +
                 "  function applyAdBlockCss() {" +
-                "    if (document.getElementById('carhome-adblock-style')) return;" +
-                "    var style = document.createElement('style');" +
-                "    style.id = 'carhome-adblock-style';" +
-                "    style.innerHTML = '" +
-                "      .ad-showing, .ad-interrupting, .ytp-ad-overlay-container, " +
-                "      .ytp-ad-message-container, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, " +
-                "      ytd-promoted-video-renderer, ytd-banner-promo-renderer, " +
-                "      ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, " +
-                "      ytd-ad-slot-renderer, .ytp-ad-action-interstitial, " +
-                "      ytd-action-companion-ad-renderer, ytd-in-feed-ad-layout-renderer, " +
-                "      #player-ads, .video-ads, yt-mealbar-promo-renderer, " +
-                "      ytd-popup-container yt-mealbar-promo-renderer, " +
-                "      .ytp-ad-text, .ytp-ad-preview-container, .ytp-ad-preview-text, " +
-                "      .ytp-ad-image-overlay, #offer-module, .ad-container, " +
-                "      ytm-promoted-sparkles-web-renderer, ytm-promoted-video-renderer { " +
-                "        display: none !important; " +
-                "        visibility: hidden !important; " +
-                "        height: 0 !important; " +
-                "        opacity: 0 !important; " +
-                "        pointer-events: none !important; " +
-                "      }';" +
-                "    (document.head || document.documentElement).appendChild(style);" +
+                "    if (!document.getElementById('carhome-adblock-style') && (document.head || document.documentElement)) {" +
+                "      var style = document.createElement('style');" +
+                "      style.id = 'carhome-adblock-style';" +
+                "      style.innerHTML = '" +
+                "        .ad-showing, .ad-interrupting, .ytp-ad-overlay-container, " +
+                "        .ytp-ad-message-container, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, " +
+                "        ytd-promoted-video-renderer, ytd-banner-promo-renderer, " +
+                "        ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, " +
+                "        ytd-ad-slot-renderer, .ytp-ad-action-interstitial, " +
+                "        ytd-action-companion-ad-renderer, ytd-in-feed-ad-layout-renderer, " +
+                "        #player-ads, .video-ads, yt-mealbar-promo-renderer, " +
+                "        ytd-popup-container yt-mealbar-promo-renderer, " +
+                "        .ytp-ad-text, .ytp-ad-preview-container, .ytp-ad-preview-text, " +
+                "        .ytp-ad-image-overlay, #offer-module, .ad-container, " +
+                "        ytm-promoted-sparkles-web-renderer, ytm-promoted-video-renderer { " +
+                "          display: none !important; " +
+                "          visibility: hidden !important; " +
+                "          height: 0 !important; " +
+                "          opacity: 0 !important; " +
+                "          pointer-events: none !important; " +
+                "        }';" +
+                "      (document.head || document.documentElement).appendChild(style);" +
+                "    }" +
                 "  }" +
                 "  applyAdBlockCss();" +
                 "  function eliminateAds() {" +
                 "    applyAdBlockCss();" +
                 "    var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
-                "    var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout');" +
                 "    var video = document.querySelector('video');" +
+                "    var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads');" +
                 "    if ((isAd || (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting')))) && video) {" +
                 "      try { if (player && typeof player.skipAd === 'function') { player.skipAd(); } } catch(e) {}" +
                 "      video.muted = true;" +
@@ -188,15 +213,19 @@ public class BrowserActivity extends AppCompatActivity {
                 "      } else {" +
                 "        video.currentTime = 99999;" +
                 "      }" +
+                "      if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('video_ad_fast_forward'); }" +
                 "    }" +
                 "    var skipButtons = document.querySelectorAll(" +
                 "      '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .videoAdUiSkipButton, ' +" +
                 "      '.ytp-ad-skip-button-slot button, button.ytp-ad-skip-button, button.ytp-ad-skip-button-modern, ' +" +
                 "      '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container, .ytp-ad-skip-slot button, ' +" +
-                "      'button[class*=\"skip-button\"], button[aria-label*=\"광고 건너뛰기\"], button[aria-label*=\"Skip ad\"]'" +
+                "      'button[class*=\"skip-button\"], button[aria-label*=\"광고 건너뛰기\"], button[aria-label*=\"Skip ad\"], .ytp-skip-ad-button'" +
                 "    );" +
                 "    for (var i = 0; i < skipButtons.length; i++) {" +
-                "      try { skipButtons[i].click(); } catch(e) {}" +
+                "      try {" +
+                "        skipButtons[i].click();" +
+                "        if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('skip_button_clicked'); }" +
+                "      } catch(e) {}" +
                 "    }" +
                 "    var dismissBtns = document.querySelectorAll('yt-button-renderer#dismiss-button, button[aria-label=\"닫기\"], button[aria-label=\"Close\"], #dismiss-button');" +
                 "    for (var j = 0; j < dismissBtns.length; j++) {" +
@@ -207,7 +236,7 @@ public class BrowserActivity extends AppCompatActivity {
                 "  if (!window.carHomeAdBlockTimer) {" +
                 "    window.carHomeAdBlockTimer = setInterval(eliminateAds, 150);" +
                 "  }" +
-                "  if (!window.carHomeAdBlockObs && window.MutationObserver) {" +
+                "  if (!window.carHomeAdBlockObs && window.MutationObserver && (document.documentElement || document.body)) {" +
                 "    window.carHomeAdBlockObs = new MutationObserver(function() { eliminateAds(); });" +
                 "    window.carHomeAdBlockObs.observe(document.documentElement || document.body, { childList: true, subtree: true });" +
                 "  }" +
@@ -337,6 +366,7 @@ public class BrowserActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        adBlockHandler.removeCallbacksAndMessages(null);
         if (webView != null) {
             webView.clearHistory(); // 뒤로가기 기록 삭제
             webView.clearCache(true); // 임시 파일 삭제
