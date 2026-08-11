@@ -46,22 +46,36 @@ public class BrowserActivity extends AppCompatActivity {
         ImageView btnCloseBrowser = findViewById(R.id.btnCloseBrowser);
         btnCloseBrowser.setOnClickListener(v -> finish());
 
-        // 툴바 배속 버튼 연결 및 클릭 이벤트
+        // 1. 툴바 배속 버튼 연결
         TextView btnSpeed1x = findViewById(R.id.btnSpeed1x);
         TextView btnSpeed1_5x = findViewById(R.id.btnSpeed1_5x);
         TextView btnSpeed2x = findViewById(R.id.btnSpeed2x);
+
+        btnSpeed1x.setOnClickListener(v -> setVideoSpeed(1.0f));
+        btnSpeed1_5x.setOnClickListener(v -> setVideoSpeed(1.5f));
+        btnSpeed2x.setOnClickListener(v -> setVideoSpeed(2.0f));
+
+        // 2. 툴바 시간 건너뛰기 버튼 연결
         TextView btnRewind = findViewById(R.id.btnRewind);
         TextView btnForward = findViewById(R.id.btnForward);
         TextView btnRewind10 = findViewById(R.id.btnRewind10);
         TextView btnForward10 = findViewById(R.id.btnForward10);
 
-        btnSpeed1x.setOnClickListener(v -> setVideoSpeed(1.0f));
-        btnSpeed1_5x.setOnClickListener(v -> setVideoSpeed(1.5f));
-        btnSpeed2x.setOnClickListener(v -> setVideoSpeed(2.0f));
         btnRewind.setOnClickListener(v -> skipVideo(-60));
         btnForward.setOnClickListener(v -> skipVideo(60));
         btnRewind10.setOnClickListener(v -> skipVideo(-10));
         btnForward10.setOnClickListener(v -> skipVideo(10));
+
+        // 3. 툴바 해상도 조절 버튼 연결 (360P, 480P, 720P, 1080P)
+        TextView btnRes360 = findViewById(R.id.btnRes360);
+        TextView btnRes480 = findViewById(R.id.btnRes480);
+        TextView btnRes720 = findViewById(R.id.btnRes720);
+        TextView btnRes1080 = findViewById(R.id.btnRes1080);
+
+        btnRes360.setOnClickListener(v -> setVideoQuality("medium", "360P"));
+        btnRes480.setOnClickListener(v -> setVideoQuality("large", "480P"));
+        btnRes720.setOnClickListener(v -> setVideoQuality("hd720", "720P"));
+        btnRes1080.setOnClickListener(v -> setVideoQuality("hd1080", "1080P"));
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -113,49 +127,56 @@ public class BrowserActivity extends AppCompatActivity {
         updateMenuLayout(newConfig.orientation);
     }
 
-    // 가로/세로 모드에 따라 메뉴바와 웹뷰의 구조를 완전히 재배치하는 꿀팁 메서드!
+    // 가로/세로 모드에 따라 메뉴바와 웹뷰의 구조를 완전히 재배치하는 메서드
     private void updateMenuLayout(int orientation) {
         LinearLayout rootLayout = findViewById(R.id.browserRootLayout);
         LinearLayout menuLayout = findViewById(R.id.menuLayout);
         LinearLayout menuGroup1 = findViewById(R.id.menuGroup1);
         LinearLayout menuGroup2 = findViewById(R.id.menuGroup2);
+        LinearLayout menuGroup3 = findViewById(R.id.menuGroup3);
 
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             // 가로 모드: 전체를 가로로 분할, 메뉴바는 왼쪽 1줄 기둥으로 설정
             rootLayout.setOrientation(LinearLayout.HORIZONTAL);
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                    (int) (90 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 90dp로 고정
+                    (int) (96 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 96dp로 설정
                     LinearLayout.LayoutParams.MATCH_PARENT));
 
-            // 두 그룹도 모두 세로 기둥 방향으로 전환하여 1줄로 통합 배치
+            // 세 그룹도 모두 세로 기둥 방향으로 전환하여 1줄로 통합 배치
             menuGroup1.setOrientation(LinearLayout.VERTICAL);
             menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
             menuGroup2.setOrientation(LinearLayout.VERTICAL);
             menuGroup2.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+            menuGroup3.setOrientation(LinearLayout.VERTICAL);
+            menuGroup3.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
             webView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
 
             setButtonParams(menuGroup1, true);
             setButtonParams(menuGroup2, true);
+            setButtonParams(menuGroup3, true);
         } else {
-            // 세로 모드: 전체를 세로로 분할, 메뉴바는 맨 위 2줄로 설정
+            // 세로 모드: 전체를 세로로 분할, 메뉴바는 맨 위 3줄로 설정
             rootLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    (int) (160 * getResources().getDisplayMetrics().density))); // 2줄이므로 160dp로 확대
+                    (int) (220 * getResources().getDisplayMetrics().density))); // 3줄이므로 220dp로 확대
 
-            // 두 그룹을 가로 줄로 전환하여 위아래 2층으로 배치
+            // 세 그룹을 가로 줄로 전환하여 위아래 3층으로 배치
             menuGroup1.setOrientation(LinearLayout.HORIZONTAL);
             menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
             menuGroup2.setOrientation(LinearLayout.HORIZONTAL);
             menuGroup2.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+            menuGroup3.setOrientation(LinearLayout.HORIZONTAL);
+            menuGroup3.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
             webView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
 
             setButtonParams(menuGroup1, false);
             setButtonParams(menuGroup2, false);
+            setButtonParams(menuGroup3, false);
         }
     }
 
@@ -185,6 +206,25 @@ public class BrowserActivity extends AppCompatActivity {
             webView.evaluateJavascript("var v = document.getElementsByTagName('video')[0]; if(v) v.currentTime += " + seconds + ";", null);
             String msg = Math.abs(seconds) >= 60 ? (Math.abs(seconds) / 60) + "분" : Math.abs(seconds) + "초";
             Toast.makeText(this, (seconds > 0 ? "+" + msg + " 이동" : "-" + msg + " 이동"), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 유튜브 해상도(360p, 480p, 720p, 1080p) 변경 메서드
+    private void setVideoQuality(String qualityLevel, String label) {
+        if (webView != null) {
+            String js = "(function() {" +
+                    "  var p = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
+                    "  if (p) {" +
+                    "    if (typeof p.setPlaybackQualityRange === 'function') {" +
+                    "      p.setPlaybackQualityRange('" + qualityLevel + "', '" + qualityLevel + "');" +
+                    "    }" +
+                    "    if (typeof p.setPlaybackQuality === 'function') {" +
+                    "      p.setPlaybackQuality('" + qualityLevel + "');" +
+                    "    }" +
+                    "  }" +
+                    "})();";
+            webView.evaluateJavascript(js, null);
+            Toast.makeText(this, label + " 해상도 설정 요청", Toast.LENGTH_SHORT).show();
         }
     }
 

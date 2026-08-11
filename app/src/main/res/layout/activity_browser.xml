@@ -9,12 +9,12 @@
     <LinearLayout
         android:id="@+id/menuLayout"
         android:layout_width="match_parent"
-        android:layout_height="160dp"
+        android:layout_height="220dp"
         android:orientation="vertical"
         android:background="#121212"
         android:gravity="center">
 
-        <!-- 첫 번째 줄 (Group 1): 배속 조절 -->
+        <!-- 첫 번째 줄 (Group 1): 닫기 & 배속 조절 -->
         <LinearLayout
             android:id="@+id/menuGroup1"
             android:layout_width="match_parent"
@@ -22,7 +22,7 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <!-- 닫기 버튼을 첫 번째 그룹으로 이동 -->
+            <!-- 닫기 버튼 -->
             <ImageView
                 android:id="@+id/btnCloseBrowser"
                 android:layout_width="0dp"
@@ -30,7 +30,9 @@
                 android:layout_weight="1"
                 android:background="@drawable/bg_round_btn"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:scaleType="centerInside" />
+                android:scaleType="centerInside"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/btnSpeed1x"
@@ -40,9 +42,11 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="1X"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/btnSpeed1_5x"
@@ -52,9 +56,11 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="1.5X"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/btnSpeed2x"
@@ -64,9 +70,11 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="2X"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
 
         <!-- 두 번째 줄 (Group 2): 앞뒤 이동 전용 (1분, 10초) -->
@@ -85,9 +93,11 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="&lt;&lt; 1분"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="17sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/btnRewind10"
@@ -97,9 +107,11 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="&lt; 10초"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="17sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/btnForward10"
@@ -109,9 +121,11 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="10초 &gt;"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="17sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
 
             <TextView
                 android:id="@+id/btnForward"
@@ -121,9 +135,76 @@
                 android:background="@drawable/bg_round_btn"
                 android:text="1분 &gt;&gt;"
                 android:textColor="#FFFFFF"
-                android:textSize="20sp"
+                android:textSize="17sp"
                 android:textStyle="bold"
-                android:gravity="center" />
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
+        </LinearLayout>
+
+        <!-- 세 번째 줄 (Group 3): 해상도 조절 (360P, 480P, 720P, 1080P) -->
+        <LinearLayout
+            android:id="@+id/menuGroup3"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnRes360"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_round_btn"
+                android:text="360P"
+                android:textColor="#3DDC84"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnRes480"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_round_btn"
+                android:text="480P"
+                android:textColor="#3DDC84"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnRes720"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_round_btn"
+                android:text="720P"
+                android:textColor="#3DDC84"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/btnRes1080"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/bg_round_btn"
+                android:text="1080P"
+                android:textColor="#3DDC84"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true" />
         </LinearLayout>
     </LinearLayout>
 
