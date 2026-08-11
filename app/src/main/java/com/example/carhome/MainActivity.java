@@ -3,6 +3,7 @@ package com.example.carhome;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
+import android.app.ActivityOptions;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,8 +13,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import java.lang.reflect.Method;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -421,11 +425,38 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
 
-            // 실행한 앱이 티맵일 경우 매크로 발동
+            // 실행한 앱이 티맵일 경우 팝업창 모드 확인 및 매크로 발동
             if ("com.skt.tmap.ku".equals(packageName)) {
+                SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+                boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
+
+                if (popupEnabled) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+
+                    int left = prefs.getInt("tmap_popup_x", 1050);
+                    int top = prefs.getInt("tmap_popup_y", 50);
+                    int width = prefs.getInt("tmap_popup_w", 840);
+                    int height = prefs.getInt("tmap_popup_h", 1100);
+
+                    Rect bounds = new Rect(left, top, left + width, top + height);
+
+                    ActivityOptions options = ActivityOptions.makeBasic();
+                    options.setLaunchBounds(bounds);
+
+                    try {
+                        Method method = ActivityOptions.class.getMethod("setLaunchWindowingMode", int.class);
+                        method.invoke(options, 5); // WINDOWING_MODE_FREEFORM = 5
+                    } catch (Exception ignored) {}
+
+                    startActivity(intent, options.toBundle());
+                } else {
+                    startActivity(intent);
+                }
+
                 executeTmapMacro();
+            } else {
+                startActivity(intent);
             }
         } else {
             Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();

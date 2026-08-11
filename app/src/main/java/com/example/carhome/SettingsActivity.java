@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,28 +57,65 @@ public class SettingsActivity extends AppCompatActivity {
         currentX = prefs.getInt("tmap_x", 1130);
         currentY = prefs.getInt("tmap_y", 70);
 
-        // 1. 슬라이더 바인딩
-        setupSeekBar(R.id.seekFloatingY, R.id.tvFloatingY, "floating_y", prefs.getInt("floating_y", 132), " px");
-        setupSeekBar(R.id.seekPopupY, R.id.tvPopupY, "popup_y", prefs.getInt("popup_y", 200), " px");
-        setupSeekBar(R.id.seekAutoClose, R.id.tvAutoClose, "auto_close", prefs.getInt("auto_close", 5), " 초");
-        setupSeekBar(R.id.seekTmapX, R.id.tvTmapX, "tmap_x", currentX, "");
-        setupSeekBar(R.id.seekTmapY, R.id.tvTmapY, "tmap_y", currentY, "");
+        // 1. 티맵 팝업창 모드 스위치 바인딩
+        @SuppressLint("UseSwitchCompatOrMaterialCode")
+        Switch switchTmapPopupMode = findViewById(R.id.switchTmapPopupMode);
+        if (switchTmapPopupMode != null) {
+            switchTmapPopupMode.setChecked(prefs.getBoolean("tmap_popup_enabled", true));
+            switchTmapPopupMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.edit().putBoolean("tmap_popup_enabled", isChecked).apply();
+                Toast.makeText(this, isChecked ? "🚗 티맵 팝업창(플로팅) 모드 ON" : "🚗 티맵 전체화면 모드 ON", Toast.LENGTH_SHORT).show();
+            });
+        }
 
-        // 1px / 10px 세부 조절 버튼 연결
-        setupStepButton(R.id.btnTmapXMinus10, R.id.seekTmapX, -10);
+        // 2. 티맵 팝업창 크기/위치 슬라이더 바인딩 (기본값: 우측 절반 팝업창 1050, 50, 840, 1100)
+        setupSeekBar(R.id.seekTmapPopupX, R.id.tvTmapPopupX, "tmap_popup_x", prefs.getInt("tmap_popup_x", 1050), " px");
+        setupStepButton(R.id.btnTmapPopupXMinus1, R.id.seekTmapPopupX, -1);
+        setupStepButton(R.id.btnTmapPopupXPlus1, R.id.seekTmapPopupX, 1);
+
+        setupSeekBar(R.id.seekTmapPopupY, R.id.tvTmapPopupY, "tmap_popup_y", prefs.getInt("tmap_popup_y", 50), " px");
+        setupStepButton(R.id.btnTmapPopupYMinus1, R.id.seekTmapPopupY, -1);
+        setupStepButton(R.id.btnTmapPopupYPlus1, R.id.seekTmapPopupY, 1);
+
+        setupSeekBar(R.id.seekTmapPopupW, R.id.tvTmapPopupW, "tmap_popup_w", prefs.getInt("tmap_popup_w", 840), " px");
+        setupStepButton(R.id.btnTmapPopupWMinus1, R.id.seekTmapPopupW, -1);
+        setupStepButton(R.id.btnTmapPopupWPlus1, R.id.seekTmapPopupW, 1);
+
+        setupSeekBar(R.id.seekTmapPopupH, R.id.tvTmapPopupH, "tmap_popup_h", prefs.getInt("tmap_popup_h", 1100), " px");
+        setupStepButton(R.id.btnTmapPopupHMinus1, R.id.seekTmapPopupH, -1);
+        setupStepButton(R.id.btnTmapPopupHPlus1, R.id.seekTmapPopupH, 1);
+
+        // 3. 티맵 매크로 좌표 슬라이더 및 1단위 세부 조절 버튼 연결
+        setupSeekBar(R.id.seekTmapX, R.id.tvTmapX, "tmap_x", currentX, " px");
         setupStepButton(R.id.btnTmapXMinus1, R.id.seekTmapX, -1);
         setupStepButton(R.id.btnTmapXPlus1, R.id.seekTmapX, 1);
-        setupStepButton(R.id.btnTmapXPlus10, R.id.seekTmapX, 10);
 
-        setupStepButton(R.id.btnTmapYMinus10, R.id.seekTmapY, -10);
+        setupSeekBar(R.id.seekTmapY, R.id.tvTmapY, "tmap_y", currentY, " px");
         setupStepButton(R.id.btnTmapYMinus1, R.id.seekTmapY, -1);
         setupStepButton(R.id.btnTmapYPlus1, R.id.seekTmapY, 1);
-        setupStepButton(R.id.btnTmapYPlus10, R.id.seekTmapY, 10);
+
+        // 4. 플로팅 위젯 & 팝업 메뉴 슬라이더 및 1단위 세부 조절 버튼 연결
+        setupSeekBar(R.id.seekFloatingY, R.id.tvFloatingY, "floating_y", prefs.getInt("floating_y", 132), " px");
+        setupStepButton(R.id.btnFloatingYMinus1, R.id.seekFloatingY, -1);
+        setupStepButton(R.id.btnFloatingYPlus1, R.id.seekFloatingY, 1);
+
+        setupSeekBar(R.id.seekPopupY, R.id.tvPopupY, "popup_y", prefs.getInt("popup_y", 200), " px");
+        setupStepButton(R.id.btnPopupYMinus1, R.id.seekPopupY, -1);
+        setupStepButton(R.id.btnPopupYPlus1, R.id.seekPopupY, 1);
+
+        setupSeekBar(R.id.seekAutoClose, R.id.tvAutoClose, "auto_close", prefs.getInt("auto_close", 5), " 초");
+        setupStepButton(R.id.btnAutoCloseMinus1, R.id.seekAutoClose, -1);
+        setupStepButton(R.id.btnAutoClosePlus1, R.id.seekAutoClose, 1);
 
         setupSeekBar(R.id.seekHandleClockSize, R.id.tvHandleClockSize, "handle_clock_size", prefs.getInt("handle_clock_size", 18), " sp");
-        setupSeekBar(R.id.seekPopupIconSize, R.id.tvPopupIconSize, "popup_icon_size", prefs.getInt("popup_icon_size", 80), " dp");
+        setupStepButton(R.id.btnHandleClockSizeMinus1, R.id.seekHandleClockSize, -1);
+        setupStepButton(R.id.btnHandleClockSizePlus1, R.id.seekHandleClockSize, 1);
 
-        // 2. 비주얼 매크로 좌표 피커(조준경) 실행 버튼
+        setupSeekBar(R.id.seekPopupIconSize, R.id.tvPopupIconSize, "popup_icon_size", prefs.getInt("popup_icon_size", 80), " dp");
+        setupStepButton(R.id.btnPopupIconSizeMinus1, R.id.seekPopupIconSize, -1);
+        setupStepButton(R.id.btnPopupIconSizePlus1, R.id.seekPopupIconSize, 1);
+
+        // 5. 비주얼 매크로 좌표 피커(조준경) 실행 버튼
         View btnVisualPicker = findViewById(R.id.btnOpenVisualPicker);
         if (btnVisualPicker != null) {
             btnVisualPicker.setOnClickListener(v -> {
@@ -88,24 +126,24 @@ public class SettingsActivity extends AppCompatActivity {
                     TextView tvY = findViewById(R.id.tvTmapY);
                     if (seekX != null && tvX != null) {
                         seekX.setProgress(x);
-                        tvX.setText(String.valueOf(x));
+                        tvX.setText(x + " px");
                     }
                     if (seekY != null && tvY != null) {
                         seekY.setProgress(y);
-                        tvY.setText(String.valueOf(y));
+                        tvY.setText(y + " px");
                     }
                     updatePreviewCircle(x, y);
                 });
             });
         }
 
-        // 3. 배터리 최적화 제외 요청 버튼
+        // 6. 배터리 최적화 제외 요청 버튼
         View btnBatteryOpt = findViewById(R.id.btnBatteryOptimization);
         if (btnBatteryOpt != null) {
             btnBatteryOpt.setOnClickListener(v -> requestBatteryOptimizationExemption());
         }
 
-        // 4. 설정 화면 내 즉시 테스트 클릭 버튼
+        // 7. 설정 화면 내 즉시 테스트 클릭 버튼
         View btnTestClickInSettings = findViewById(R.id.btnTestClickInSettings);
         if (btnTestClickInSettings != null) {
             btnTestClickInSettings.setOnClickListener(v -> {
@@ -233,7 +271,7 @@ public class SettingsActivity extends AppCompatActivity {
                 SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
                 prefs.edit().putInt(prefKey, progress).apply();
 
-                // 티맵 X, Y 슬라이더 조절 시 실시간 빨간 원 위치 즉각 갱신
+                // 티맵 매크로 X, Y 슬라이더 조절 시 실시간 빨간 원 위치 즉각 갱신
                 if (prefKey.equals("tmap_x")) {
                     updatePreviewCircle(progress, prefs.getInt("tmap_y", 70));
                 } else if (prefKey.equals("tmap_y")) {
