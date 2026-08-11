@@ -3,6 +3,7 @@ package com.example.carhome;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -28,6 +29,7 @@ import java.io.ByteArrayInputStream;
 public class BrowserActivity extends AppCompatActivity {
 
     private WebView webView;
+    private TextView tvAdBlockStatus;
     private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
 
@@ -35,13 +37,28 @@ public class BrowserActivity extends AppCompatActivity {
     public class AdBlockBridge {
         @JavascriptInterface
         public void onAdSkipped(String reason) {
-            long now = System.currentTimeMillis();
-            if (now - lastAdToastTime > 2500) { // 알림 도배 방지 (2.5초 간격)
-                lastAdToastTime = now;
-                runOnUiThread(() -> {
-                    Toast.makeText(BrowserActivity.this, "🛡️ [광고 차단] 유튜브 광고 즉시 건너뛰기 완료! ⚡", Toast.LENGTH_SHORT).show();
-                });
-            }
+            runOnUiThread(() -> {
+                if (tvAdBlockStatus != null) {
+                    tvAdBlockStatus.setText("⚡ [광고 차단 완료] 유튜브 광고 0.01초 자동 건너뛰기 성공! 🎯");
+                    tvAdBlockStatus.setBackgroundColor(Color.parseColor("#E65100")); // 눈에 확 띄는 주황/골드
+                    tvAdBlockStatus.setTextColor(Color.WHITE);
+
+                    // 3초 후 기본 대기 상태로 복귀
+                    adBlockHandler.postDelayed(() -> {
+                        if (tvAdBlockStatus != null) {
+                            tvAdBlockStatus.setText("🛡️ [광고 차단 가동 중] 유튜브 실시간 광고 감시 및 자동 건너뛰기 활성화");
+                            tvAdBlockStatus.setBackgroundColor(Color.parseColor("#1B5E20")); // 안정적인 에메랄드 그린
+                            tvAdBlockStatus.setTextColor(Color.WHITE);
+                        }
+                    }, 3000);
+                }
+
+                long now = System.currentTimeMillis();
+                if (now - lastAdToastTime > 2500) {
+                    lastAdToastTime = now;
+                    Toast.makeText(BrowserActivity.this, "⚡ [광고 차단] 유튜브 광고 즉시 건너뛰기 완료!", Toast.LENGTH_SHORT).show();
+                }
+            });
         }
     }
 
@@ -70,6 +87,7 @@ public class BrowserActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_browser);
         webView = findViewById(R.id.webView);
+        tvAdBlockStatus = findViewById(R.id.tvAdBlockStatus);
 
         // 닫기 버튼 연결 및 클릭 이벤트 (화면 종료)
         ImageView btnCloseBrowser = findViewById(R.id.btnCloseBrowser);

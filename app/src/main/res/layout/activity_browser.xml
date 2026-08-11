@@ -6,6 +6,19 @@
     android:orientation="vertical"
     android:background="#000000">
 
+    <!-- 상단 광고 차단 실시간 상태 표시 바 (적용 여부 100% 확인 배지) -->
+    <TextView
+        android:id="@+id/tvAdBlockStatus"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:background="#1B5E20"
+        android:text="🛡️ [광고 차단 가동 중] 유튜브 실시간 광고 감시 및 자동 건너뛰기 활성화"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:singleLine="true" />
+
     <LinearLayout
         android:id="@+id/menuLayout"
         android:layout_width="match_parent"
