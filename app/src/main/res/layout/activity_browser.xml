@@ -6,28 +6,15 @@
     android:orientation="vertical"
     android:background="#000000">
 
-    <!-- 상단 광고 차단 실시간 상태 표시 바 (적용 여부 100% 확인 배지) -->
-    <TextView
-        android:id="@+id/tvAdBlockStatus"
-        android:layout_width="match_parent"
-        android:layout_height="32dp"
-        android:background="#1B5E20"
-        android:text="🛡️ [광고 차단 가동 중] 유튜브 실시간 광고 감시 및 자동 건너뛰기 활성화"
-        android:textColor="#FFFFFF"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:singleLine="true" />
-
     <LinearLayout
         android:id="@+id/menuLayout"
         android:layout_width="match_parent"
-        android:layout_height="220dp"
+        android:layout_height="180dp"
         android:orientation="vertical"
         android:background="#121212"
         android:gravity="center">
 
-        <!-- 첫 번째 줄 (Group 1): 닫기 & 배속 조절 -->
+        <!-- 첫 번째 줄 (Group 1): [🛡️ 광고차단 상태 배지] & 배속 조절 -->
         <LinearLayout
             android:id="@+id/menuGroup1"
             android:layout_width="match_parent"
@@ -35,15 +22,18 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <!-- 닫기 버튼 -->
-            <ImageView
-                android:id="@+id/btnCloseBrowser"
+            <!-- 광고 차단 실시간 상태 표시 배지 버튼 -->
+            <TextView
+                android:id="@+id/btnAdBlockStatus"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@drawable/bg_round_btn"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                android:scaleType="centerInside"
+                android:text="🛡️ 차단중"
+                android:textColor="#3DDC84"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:gravity="center"
                 android:clickable="true"
                 android:focusable="true" />
 

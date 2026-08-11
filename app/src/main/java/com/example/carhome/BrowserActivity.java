@@ -14,7 +14,6 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +28,7 @@ import java.io.ByteArrayInputStream;
 public class BrowserActivity extends AppCompatActivity {
 
     private WebView webView;
-    private TextView tvAdBlockStatus;
+    private TextView btnAdBlockStatus;
     private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
 
@@ -38,19 +37,17 @@ public class BrowserActivity extends AppCompatActivity {
         @JavascriptInterface
         public void onAdSkipped(String reason) {
             runOnUiThread(() -> {
-                if (tvAdBlockStatus != null) {
-                    tvAdBlockStatus.setText("⚡ [광고 차단 완료] 유튜브 광고 0.01초 자동 건너뛰기 성공! 🎯");
-                    tvAdBlockStatus.setBackgroundColor(Color.parseColor("#E65100")); // 눈에 확 띄는 주황/골드
-                    tvAdBlockStatus.setTextColor(Color.WHITE);
+                if (btnAdBlockStatus != null) {
+                    btnAdBlockStatus.setText("⚡ 스킵!");
+                    btnAdBlockStatus.setTextColor(Color.parseColor("#FFA000")); // 번쩍이는 주황/골드
 
-                    // 3초 후 기본 대기 상태로 복귀
+                    // 2.5초 후 기본 [🛡️ 차단중] 녹색 상태로 복귀
                     adBlockHandler.postDelayed(() -> {
-                        if (tvAdBlockStatus != null) {
-                            tvAdBlockStatus.setText("🛡️ [광고 차단 가동 중] 유튜브 실시간 광고 감시 및 자동 건너뛰기 활성화");
-                            tvAdBlockStatus.setBackgroundColor(Color.parseColor("#1B5E20")); // 안정적인 에메랄드 그린
-                            tvAdBlockStatus.setTextColor(Color.WHITE);
+                        if (btnAdBlockStatus != null) {
+                            btnAdBlockStatus.setText("🛡️ 차단중");
+                            btnAdBlockStatus.setTextColor(Color.parseColor("#3DDC84")); // 상시 녹색
                         }
-                    }, 3000);
+                    }, 2500);
                 }
 
                 long now = System.currentTimeMillis();
@@ -67,7 +64,7 @@ public class BrowserActivity extends AppCompatActivity {
         public void run() {
             if (webView != null) {
                 injectAdBlocker(webView);
-                adBlockHandler.postDelayed(this, 1000); // 1초마다 지속 주입하여 SPA(단일페이지) 영상 전환 시에도 100% 감시 유지
+                adBlockHandler.postDelayed(this, 1000); // 1초마다 지속 주입하여 영상 전환 시에도 100% 감시 유지
             }
         }
     };
@@ -87,11 +84,13 @@ public class BrowserActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_browser);
         webView = findViewById(R.id.webView);
-        tvAdBlockStatus = findViewById(R.id.tvAdBlockStatus);
+        btnAdBlockStatus = findViewById(R.id.btnAdBlockStatus);
 
-        // 닫기 버튼 연결 및 클릭 이벤트 (화면 종료)
-        ImageView btnCloseBrowser = findViewById(R.id.btnCloseBrowser);
-        btnCloseBrowser.setOnClickListener(v -> finish());
+        if (btnAdBlockStatus != null) {
+            btnAdBlockStatus.setOnClickListener(v -> {
+                Toast.makeText(this, "🛡️ 유튜브 실시간 광고 차단 엔진 작동 중 (자동 스킵 활성)", Toast.LENGTH_SHORT).show();
+            });
+        }
 
         // 1. 툴바 배속 버튼 연결
         TextView btnSpeed1x = findViewById(R.id.btnSpeed1x);
@@ -181,9 +180,6 @@ public class BrowserActivity extends AppCompatActivity {
 
         // 광고 차단 상시 감시 스케줄러 시작
         adBlockHandler.postDelayed(adBlockPeriodicRunnable, 1000);
-
-        // 실행 시 차단기 활성화 알림 표시
-        Toast.makeText(this, "🛡️ 유튜브 실시간 광고 차단 엔진 활성화됨", Toast.LENGTH_SHORT).show();
     }
 
     // 유튜브 광고를 완벽하게 차단하고 스킵하는 복합 스크립트 주입
@@ -191,6 +187,22 @@ public class BrowserActivity extends AppCompatActivity {
         if (view == null) return;
         String adBlockJs =
                 "(function() {" +
+                "  if (!window.__carHomeJsonHooked) {" +
+                "    window.__carHomeJsonHooked = true;" +
+                "    var origParse = JSON.parse;" +
+                "    JSON.parse = function() {" +
+                "      var r = origParse.apply(this, arguments);" +
+                "      if (r && typeof r === 'object') {" +
+                "        if (r.adPlacements) delete r.adPlacements;" +
+                "        if (r.adSlots) delete r.adSlots;" +
+                "        if (r.playerResponse) {" +
+                "          if (r.playerResponse.adPlacements) delete r.playerResponse.adPlacements;" +
+                "          if (r.playerResponse.adSlots) delete r.playerResponse.adSlots;" +
+                "        }" +
+                "      }" +
+                "      return r;" +
+                "    };" +
+                "  }" +
                 "  function applyAdBlockCss() {" +
                 "    if (!document.getElementById('carhome-adblock-style') && (document.head || document.documentElement)) {" +
                 "      var style = document.createElement('style');" +
@@ -206,7 +218,8 @@ public class BrowserActivity extends AppCompatActivity {
                 "        ytd-popup-container yt-mealbar-promo-renderer, " +
                 "        .ytp-ad-text, .ytp-ad-preview-container, .ytp-ad-preview-text, " +
                 "        .ytp-ad-image-overlay, #offer-module, .ad-container, " +
-                "        ytm-promoted-sparkles-web-renderer, ytm-promoted-video-renderer { " +
+                "        ytm-promoted-sparkles-web-renderer, ytm-promoted-video-renderer, " +
+                "        .ytm-promoted-sparkles-text-search-renderer { " +
                 "          display: none !important; " +
                 "          visibility: hidden !important; " +
                 "          height: 0 !important; " +
@@ -220,16 +233,17 @@ public class BrowserActivity extends AppCompatActivity {
                 "  function eliminateAds() {" +
                 "    applyAdBlockCss();" +
                 "    var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
+                "    var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads, [class*=\"ad-showing\"], .ytm-player-ad');" +
+                "    if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {" +
+                "      isAd = true;" +
+                "    }" +
                 "    var video = document.querySelector('video');" +
-                "    var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads');" +
-                "    if ((isAd || (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting')))) && video) {" +
+                "    if (isAd && video) {" +
                 "      try { if (player && typeof player.skipAd === 'function') { player.skipAd(); } } catch(e) {}" +
                 "      video.muted = true;" +
                 "      video.playbackRate = 16.0;" +
                 "      if (video.duration && !isNaN(video.duration) && video.duration > 0 && isFinite(video.duration)) {" +
-                "        video.currentTime = video.duration - 0.05;" +
-                "      } else {" +
-                "        video.currentTime = 99999;" +
+                "        video.currentTime = Math.max(0, video.duration - 0.1);" +
                 "      }" +
                 "      if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('video_ad_fast_forward'); }" +
                 "    }" +
@@ -252,7 +266,7 @@ public class BrowserActivity extends AppCompatActivity {
                 "  }" +
                 "  eliminateAds();" +
                 "  if (!window.carHomeAdBlockTimer) {" +
-                "    window.carHomeAdBlockTimer = setInterval(eliminateAds, 150);" +
+                "    window.carHomeAdBlockTimer = setInterval(eliminateAds, 100);" +
                 "  }" +
                 "  if (!window.carHomeAdBlockObs && window.MutationObserver && (document.documentElement || document.body)) {" +
                 "    window.carHomeAdBlockObs = new MutationObserver(function() { eliminateAds(); });" +
@@ -305,7 +319,7 @@ public class BrowserActivity extends AppCompatActivity {
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    (int) (220 * getResources().getDisplayMetrics().density))); // 3줄이므로 220dp로 확대
+                    (int) (180 * getResources().getDisplayMetrics().density))); // 3줄 180dp로 컴팩트하게 축소
 
             // 세 그룹을 가로 줄로 전환하여 위아래 3층으로 배치
             menuGroup1.setOrientation(LinearLayout.HORIZONTAL);
