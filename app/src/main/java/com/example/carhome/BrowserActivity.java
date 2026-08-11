@@ -1,13 +1,16 @@
 package com.example.carhome;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -75,13 +78,13 @@ public class BrowserActivity extends AppCompatActivity {
         }
     };
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // 메인 화면처럼 상태바 및 네비게이션바 숨김 (전체화면)
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        // 키보드(IME)와 뷰가 정상적으로 리사이즈되도록 설정하면서 상단 상태바 숨김
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         if (controller != null) {
             controller.hide(WindowInsetsCompat.Type.statusBars()); // 상단 상태바만 숨김
@@ -130,6 +133,22 @@ public class BrowserActivity extends AppCompatActivity {
         btnRes480.setOnClickListener(v -> setVideoQuality("large", "480P"));
         btnRes720.setOnClickListener(v -> setVideoQuality("hd720", "720P"));
         btnRes1080.setOnClickListener(v -> setVideoQuality("hd1080", "1080P"));
+
+        // [키보드/자판 입력 포커스 활성화]
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
+        webView.requestFocus(View.FOCUS_DOWN);
+        webView.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_UP:
+                    if (!v.hasFocus()) {
+                        v.requestFocus();
+                    }
+                    break;
+            }
+            return false;
+        });
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
