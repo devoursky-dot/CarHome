@@ -93,26 +93,14 @@ public class BrowserActivity extends AppCompatActivity {
         fullscreenContainer = findViewById(R.id.fullscreenContainer);
         btnAdBlockStatus = findViewById(R.id.btnAdBlockStatus);
 
-        // 1. 뒤로가기 버튼 연결
-        TextView btnBrowserBack = findViewById(R.id.btnBrowserBack);
-        if (btnBrowserBack != null) {
-            btnBrowserBack.setOnClickListener(v -> handleBackNavigation());
-        }
-
-        // 2. 광고 차단 상태 버튼
+        // 1. 광고 차단 상태 배지 버튼 (클릭 시 상태 알림)
         if (btnAdBlockStatus != null) {
             btnAdBlockStatus.setOnClickListener(v -> {
                 Toast.makeText(this, "🛡️ 유튜브 실시간 광고 차단 엔진 작동 중 (자동 스킵 활성)", Toast.LENGTH_SHORT).show();
             });
         }
 
-        // 3. 전체화면 토글 버튼
-        TextView btnFullscreen = findViewById(R.id.btnFullscreen);
-        if (btnFullscreen != null) {
-            btnFullscreen.setOnClickListener(v -> toggleFullscreen());
-        }
-
-        // 4. 툴바 배속 버튼 연결
+        // 2. 툴바 배속 버튼 연결 (1X, 1.5X, 2X)
         TextView btnSpeed1x = findViewById(R.id.btnSpeed1x);
         TextView btnSpeed1_5x = findViewById(R.id.btnSpeed1_5x);
         TextView btnSpeed2x = findViewById(R.id.btnSpeed2x);
@@ -121,7 +109,7 @@ public class BrowserActivity extends AppCompatActivity {
         btnSpeed1_5x.setOnClickListener(v -> setVideoSpeed(1.5f));
         btnSpeed2x.setOnClickListener(v -> setVideoSpeed(2.0f));
 
-        // 5. 툴바 시간 건너뛰기 버튼 연결
+        // 3. 툴바 시간 건너뛰기 버튼 연결 (<< 1분, < 10초, 10초 >, 1분 >>)
         TextView btnRewind = findViewById(R.id.btnRewind);
         TextView btnForward = findViewById(R.id.btnForward);
         TextView btnRewind10 = findViewById(R.id.btnRewind10);
@@ -132,7 +120,7 @@ public class BrowserActivity extends AppCompatActivity {
         btnRewind10.setOnClickListener(v -> skipVideo(-10));
         btnForward10.setOnClickListener(v -> skipVideo(10));
 
-        // 6. 툴바 해상도 조절 버튼 연결 (360P, 480P, 720P, 1080P)
+        // 4. 툴바 해상도 조절 버튼 연결 (360P, 480P, 720P, 1080P)
         TextView btnRes360 = findViewById(R.id.btnRes360);
         TextView btnRes480 = findViewById(R.id.btnRes480);
         TextView btnRes720 = findViewById(R.id.btnRes720);
@@ -236,7 +224,7 @@ public class BrowserActivity extends AppCompatActivity {
         adBlockHandler.postDelayed(adBlockPeriodicRunnable, 1000);
     }
 
-    // 뒤로가기 통합 처리 메서드
+    // 뒤로가기 통합 처리 메서드 (태블릿 뒤로가기 버튼 지원)
     private void handleBackNavigation() {
         if (customView != null) {
             // 1. 전체화면 모드일 때 ➔ 전체화면 닫기
@@ -258,30 +246,6 @@ public class BrowserActivity extends AppCompatActivity {
         } else {
             // 3. 더 이상 이전 페이지가 없을 때 ➔ 브라우저 종료 후 홈(대시보드)으로 복귀
             finish();
-        }
-    }
-
-    // 전체화면 토글 메서드
-    private void toggleFullscreen() {
-        if (webView != null) {
-            String js = "(function() {" +
-                    "  var p = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
-                    "  var v = document.querySelector('video');" +
-                    "  var fullBtn = document.querySelector('.ytp-fullscreen-button, button.fullscreen-icon, button[aria-label*=\"전체 화면\"], button[aria-label*=\"Full screen\"]');" +
-                    "  if (fullBtn) {" +
-                    "    fullBtn.click();" +
-                    "  } else if (p && typeof p.toggleFullscreen === 'function') {" +
-                    "    p.toggleFullscreen();" +
-                    "  } else if (v) {" +
-                    "    if (document.fullscreenElement) {" +
-                    "      if (document.exitFullscreen) document.exitFullscreen();" +
-                    "    } else {" +
-                    "      if (v.requestFullscreen) v.requestFullscreen();" +
-                    "      else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen();" +
-                    "    }" +
-                    "  }" +
-                    "})();";
-            webView.evaluateJavascript(js, null);
         }
     }
 
@@ -405,12 +369,12 @@ public class BrowserActivity extends AppCompatActivity {
             rootLayout.setOrientation(LinearLayout.HORIZONTAL);
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                    (int) (105 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 105dp로 설정
+                    (int) (96 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 96dp로 설정
                     LinearLayout.LayoutParams.MATCH_PARENT));
 
             // 세 그룹도 모두 세로 기둥 방향으로 전환하여 1줄로 통합 배치
             menuGroup1.setOrientation(LinearLayout.VERTICAL);
-            menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.4f));
+            menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
             menuGroup2.setOrientation(LinearLayout.VERTICAL);
             menuGroup2.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
             menuGroup3.setOrientation(LinearLayout.VERTICAL);
@@ -452,7 +416,7 @@ public class BrowserActivity extends AppCompatActivity {
             LinearLayout.LayoutParams params = isLandscape
                     ? new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f)
                     : new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f);
-            params.setMargins(4, 4, 4, 4);
+            params.setMargins(6, 6, 6, 6);
             child.setLayoutParams(params);
         }
     }

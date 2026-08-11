@@ -12,7 +12,7 @@
         android:orientation="vertical"
         android:background="#000000">
 
-        <!-- 상단 3단 툴바 -->
+        <!-- 상단 3단 툴바 (깔끔한 4x3 균등 배치) -->
         <LinearLayout
             android:id="@+id/menuLayout"
             android:layout_width="match_parent"
@@ -21,7 +21,7 @@
             android:background="#121212"
             android:gravity="center">
 
-            <!-- 첫 번째 줄 (Group 1): 뒤로가기, 광고차단 배지, 전체화면, 배속 조절 -->
+            <!-- 첫 번째 줄 (Group 1): [🛡️ 광고차단 상태 배지] & 배속 조절 -->
             <LinearLayout
                 android:id="@+id/menuGroup1"
                 android:layout_width="match_parent"
@@ -29,61 +29,30 @@
                 android:layout_weight="1"
                 android:orientation="horizontal">
 
-                <!-- 1. 뒤로가기 버튼 -->
-                <TextView
-                    android:id="@+id/btnBrowserBack"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="◀ 뒤로"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <!-- 2. 광고 차단 실시간 상태 표시 배지 -->
+                <!-- 광고 차단 실시간 상태 표시 배지 버튼 -->
                 <TextView
                     android:id="@+id/btnAdBlockStatus"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1.1"
+                    android:layout_weight="1"
                     android:background="@drawable/bg_round_btn"
                     android:text="🛡️ 차단중"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
                     android:focusable="true" />
 
-                <!-- 3. 전체화면 토글 버튼 -->
-                <TextView
-                    android:id="@+id/btnFullscreen"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1.1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="⛶ 전체화면"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <!-- 4. 배속 조절 버튼들 -->
                 <TextView
                     android:id="@+id/btnSpeed1x"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.9"
+                    android:layout_weight="1"
                     android:background="@drawable/bg_round_btn"
                     android:text="1X"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -93,11 +62,11 @@
                     android:id="@+id/btnSpeed1_5x"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.9"
+                    android:layout_weight="1"
                     android:background="@drawable/bg_round_btn"
                     android:text="1.5X"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -107,11 +76,11 @@
                     android:id="@+id/btnSpeed2x"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="0.9"
+                    android:layout_weight="1"
                     android:background="@drawable/bg_round_btn"
                     android:text="2X"
                     android:textColor="#FFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
