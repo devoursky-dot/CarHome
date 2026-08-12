@@ -39,13 +39,13 @@
         <!-- 내장 브라우저 화면 등록 (회전 시 새로고침 방지 및 키보드 자판 활성화) -->
         <activity
             android:name=".BrowserActivity"
-            android:exported="false"
+            android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize|stateHidden"
             android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden" />
 
         <!-- CarHome 전용 설정 화면 등록 -->
-        <activity android:name=".SettingsActivity" android:exported="false" />
+        <activity android:name=".SettingsActivity" android:exported="true" />
 
         <!-- 플로팅 화면을 띄워줄 서비스 등록 -->
         <service android:name=".FloatingService" />
