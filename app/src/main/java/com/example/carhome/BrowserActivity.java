@@ -38,7 +38,7 @@ public class BrowserActivity extends AppCompatActivity {
     private WebChromeClient.CustomViewCallback customViewCallback;
     private FrameLayout fullscreenContainer;
     private TextView btnResolutionStatus;
-    private String currentQualityLabel = "360P";
+    private String currentQualityLabel = "240P";
 
     private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
@@ -62,7 +62,7 @@ public class BrowserActivity extends AppCompatActivity {
         @JavascriptInterface
         public void onQualityDetected(String quality) {
             runOnUiThread(() -> {
-                String label = "360P";
+                String label = "240P";
                 if (quality != null) {
                     String qLower = quality.toLowerCase();
                     if (qLower.contains("1080") || qLower.contains("hd1080")) label = "1080P";
@@ -82,10 +82,10 @@ public class BrowserActivity extends AppCompatActivity {
         if (btnResolutionStatus != null) {
             runOnUiThread(() -> {
                 btnResolutionStatus.setText("📺 " + label);
-                if ("360P".equals(label)) {
-                    btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 저해상도 절약 모드)
+                if ("240P".equals(label)) {
+                    btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 초절약 모드)
                 } else {
-                    btnResolutionStatus.setTextColor(Color.parseColor("#64B5F6")); // 하늘색 (고해상도 모드)
+                    btnResolutionStatus.setTextColor(Color.parseColor("#64B5F6")); // 하늘색 (상위 화질 모드)
                 }
             });
         }
@@ -122,11 +122,11 @@ public class BrowserActivity extends AppCompatActivity {
         fullscreenContainer = findViewById(R.id.fullscreenContainer);
         btnResolutionStatus = findViewById(R.id.btnResolutionStatus);
 
-        // 1. 현재 해상도 상태 표시 배지 버튼 (클릭 시 상태 알림)
+        // 1. 현재 해상도 상태 표시 배지 버튼 (기본 240P)
         if (btnResolutionStatus != null) {
-            updateResolutionBadge("360P");
+            updateResolutionBadge("240P");
             btnResolutionStatus.setOnClickListener(v -> {
-                Toast.makeText(this, "📺 현재 동영상 해상도: " + currentQualityLabel + " (기본 360P 저해상도 고정)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "📺 현재 동영상 해상도: " + currentQualityLabel + " (기본 240P 초절약 고정)", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -150,16 +150,18 @@ public class BrowserActivity extends AppCompatActivity {
         btnRewind10.setOnClickListener(v -> skipVideo(-10));
         btnForward10.setOnClickListener(v -> skipVideo(10));
 
-        // 4. 툴바 해상도 조절 버튼 연결 (360P, 480P, 720P, 1080P)
+        // 4. 툴바 해상도 조절 버튼 연결 (240P, 360P, 480P, 720P, 1080P)
+        TextView btnRes240 = findViewById(R.id.btnRes240);
         TextView btnRes360 = findViewById(R.id.btnRes360);
         TextView btnRes480 = findViewById(R.id.btnRes480);
         TextView btnRes720 = findViewById(R.id.btnRes720);
         TextView btnRes1080 = findViewById(R.id.btnRes1080);
 
-        btnRes360.setOnClickListener(v -> setVideoQuality("medium", "360P"));
-        btnRes480.setOnClickListener(v -> setVideoQuality("large", "480P"));
-        btnRes720.setOnClickListener(v -> setVideoQuality("hd720", "720P"));
-        btnRes1080.setOnClickListener(v -> setVideoQuality("hd1080", "1080P"));
+        if (btnRes240 != null) btnRes240.setOnClickListener(v -> setVideoQuality("small", "240P"));
+        if (btnRes360 != null) btnRes360.setOnClickListener(v -> setVideoQuality("medium", "360P"));
+        if (btnRes480 != null) btnRes480.setOnClickListener(v -> setVideoQuality("large", "480P"));
+        if (btnRes720 != null) btnRes720.setOnClickListener(v -> setVideoQuality("hd720", "720P"));
+        if (btnRes1080 != null) btnRes1080.setOnClickListener(v -> setVideoQuality("hd1080", "1080P"));
 
         // [키보드/자판 입력 포커스 활성화]
         webView.setFocusable(true);
@@ -315,7 +317,7 @@ public class BrowserActivity extends AppCompatActivity {
         handleBackNavigation();
     }
 
-    // 유튜브 광고 차단 및 기본 360P 저해상도 자동 고정 스크립트 주입
+    // 유튜브 광고 차단 및 기본 240P 초저해상도 자동 고정 스크립트 주입
     private void injectAdBlocker(WebView view) {
         if (view == null) return;
         String adBlockJs =
@@ -337,7 +339,7 @@ public class BrowserActivity extends AppCompatActivity {
                 "    };" +
                 "  }" +
                 "  try {" +
-                "    var qObj = { data: 'medium', expiration: Date.now() + 315360000000, creation: Date.now() };" +
+                "    var qObj = { data: 'small', expiration: Date.now() + 315360000000, creation: Date.now() };" +
                 "    localStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
                 "    sessionStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
                 "  } catch(e) {}" +
@@ -404,10 +406,10 @@ public class BrowserActivity extends AppCompatActivity {
                 "    if (player) {" +
                 "      if (!window.__carHomeUserSelectedQuality) {" +
                 "        if (typeof player.setPlaybackQualityRange === 'function') {" +
-                "          player.setPlaybackQualityRange('medium', 'medium');" +
+                "          player.setPlaybackQualityRange('small', 'small');" +
                 "        }" +
                 "        if (typeof player.setPlaybackQuality === 'function') {" +
-                "          player.setPlaybackQuality('medium');" +
+                "          player.setPlaybackQuality('small');" +
                 "        }" +
                 "      }" +
                 "      if (typeof player.getPlaybackQuality === 'function') {" +
@@ -531,7 +533,7 @@ public class BrowserActivity extends AppCompatActivity {
         }
     }
 
-    // 유튜브 해상도(360p, 480p, 720p, 1080p) 변경 메서드
+    // 유튜브 해상도(240p, 360p, 480p, 720p, 1080p) 변경 메서드
     private void setVideoQuality(String qualityLevel, String label) {
         if (webView != null) {
             String js = "(function() {" +
