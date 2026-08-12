@@ -44,7 +44,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FloatingService extends Service {
 
@@ -356,29 +359,89 @@ public class FloatingService extends Service {
 
     private void cleanMemory() {
         ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        if (am == null) return;
         PackageManager pm = getPackageManager();
         List<ApplicationInfo> packages = pm.getInstalledApplications(0);
 
         ActivityManager.MemoryInfo beforeMem = new ActivityManager.MemoryInfo();
         am.getMemoryInfo(beforeMem);
 
+        // [1. 절대 강제 종료하면 안 되는 필수 보호 화이트리스트]
+        // CarHome, 티맵 내비게이션, 시스템 키보드, 삼성 런처, 시스템 UI, 블루투스, 전화/LTE, GPS 등
+        Set<String> protectedWhitelist = new HashSet<>(Arrays.asList(
+                getPackageName(),
+                "com.skt.tmap.ku",
+                "com.android.systemui",
+                "com.sec.android.app.launcher",
+                "com.android.launcher3",
+                "com.samsung.android.honeyboard",
+                "com.google.android.inputmethod.korean",
+                "com.google.android.inputmethod.latin",
+                "com.android.phone",
+                "com.sec.imsservice",
+                "com.android.bluetooth",
+                "com.sec.location.nsflp2",
+                "com.google.android.gms",
+                "com.google.android.gsf"
+        ));
+
+        // [2. 메모리를 많이 먹는 불필요 백그라운드 앱 우선 타겟팅]
+        String[] aggressiveTargets = {
+                "com.android.chrome",
+                "com.google.android.projection.gearhead",
+                "com.skt.skaf.OA00412131",
+                "com.sktelecom.smartcard.SmartcardService",
+                "com.samsung.android.mobileservice",
+                "com.sec.android.diagmonagent",
+                "com.samsung.cmh",
+                "com.samsung.android.homemode",
+                "com.samsung.android.lool",
+                "com.samsung.android.sm.devicesecurity",
+                "com.samsung.android.sm.policy",
+                "com.sec.android.app.sbrowser",
+                "com.brave.browser",
+                "com.samsung.android.game.gamehome",
+                "com.samsung.android.game.gametools",
+                "com.samsung.android.bixby.agent",
+                "com.samsung.android.bixby.service"
+        };
+
+        for (String targetPkg : aggressiveTargets) {
+            try {
+                am.killBackgroundProcesses(targetPkg);
+            } catch (Exception ignored) {}
+        }
+
+        // [3. 화이트리스트를 제외한 모든 설치된 서드파티 앱 백그라운드 프로세스 정리]
+        int cleanedCount = 0;
         for (ApplicationInfo packageInfo : packages) {
-            if (!packageInfo.packageName.equals(getPackageName())) {
-                am.killBackgroundProcesses(packageInfo.packageName);
+            String pkg = packageInfo.packageName;
+            if (!protectedWhitelist.contains(pkg)) {
+                try {
+                    am.killBackgroundProcesses(pkg);
+                    cleanedCount++;
+                } catch (Exception ignored) {}
             }
         }
 
+        // 앱 내부 메모리 가비지 컬렉션(GC) 즉시 수행
+        System.gc();
+        Runtime.getRuntime().gc();
+
+        final int totalCleaned = cleanedCount;
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             ActivityManager.MemoryInfo afterMem = new ActivityManager.MemoryInfo();
             am.getMemoryInfo(afterMem);
             long freedMem = afterMem.availMem - beforeMem.availMem;
+            long availMb = afterMem.availMem / (1024 * 1024);
 
             if (freedMem > 0) {
-                Toast.makeText(this, (freedMem / (1024 * 1024)) + "MB의 램이 확보되었습니다! 🧹", Toast.LENGTH_SHORT).show();
+                long freedMb = freedMem / (1024 * 1024);
+                Toast.makeText(this, "🧹 불필요한 백그라운드 앱 정리 완료!\n[ +" + freedMb + "MB 램 확보 ] (여유 램: " + availMb + "MB)", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "이미 램이 최적화된 상태입니다. ✨", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "🧹 필수 앱(티맵/CarHome 등) 제외 " + totalCleaned + "개 백그라운드 정리 완료!\n(여유 램: " + availMb + "MB)", Toast.LENGTH_SHORT).show();
             }
-        }, 500);
+        }, 600);
     }
 
     private void setAppIcon(ImageView imageView, String packageName) {
