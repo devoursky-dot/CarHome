@@ -31,14 +31,14 @@
                 android:layout_weight="1"
                 android:orientation="horizontal">
 
-                <!-- 광고 차단 실시간 상태 표시 배지 버튼 -->
+                <!-- 현재 해상도 실시간 표시 배지 버튼 (기본 360P) -->
                 <TextView
-                    android:id="@+id/btnAdBlockStatus"
+                    android:id="@+id/btnResolutionStatus"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:background="@drawable/bg_round_btn"
-                    android:text="🛡️ 차단중"
+                    android:text="📺 360P"
                     android:textColor="#3DDC84"
                     android:textSize="16sp"
                     android:textStyle="bold"

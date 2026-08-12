@@ -1,8 +1,8 @@
 package com.example.carhome;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -33,10 +34,11 @@ import java.io.ByteArrayInputStream;
 public class BrowserActivity extends AppCompatActivity {
 
     private WebView webView;
-    private TextView btnAdBlockStatus;
-    private FrameLayout fullscreenContainer;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
+    private FrameLayout fullscreenContainer;
+    private TextView btnResolutionStatus;
+    private String currentQualityLabel = "360P";
 
     private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
@@ -46,23 +48,44 @@ public class BrowserActivity extends AppCompatActivity {
         @JavascriptInterface
         public void onAdSkipped(String reason) {
             runOnUiThread(() -> {
-                if (btnAdBlockStatus != null) {
-                    btnAdBlockStatus.setText("⚡ 스킵!");
-                    btnAdBlockStatus.setTextColor(Color.parseColor("#FFA000")); // 번쩍이는 주황/골드
-
-                    // 2.5초 후 기본 [🛡️ 차단중] 녹색 상태로 복귀
-                    adBlockHandler.postDelayed(() -> {
-                        if (btnAdBlockStatus != null) {
-                            btnAdBlockStatus.setText("🛡️ 차단중");
-                            btnAdBlockStatus.setTextColor(Color.parseColor("#3DDC84")); // 상시 녹색
-                        }
-                    }, 2500);
-                }
-
                 long now = System.currentTimeMillis();
                 if (now - lastAdToastTime > 2500) {
                     lastAdToastTime = now;
                     Toast.makeText(BrowserActivity.this, "⚡ [광고 차단] 유튜브 광고 즉시 건너뛰기 완료!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    // 안드로이드 - 웹뷰 간 실시간 해상도 감지 통신 브릿지
+    public class QualityBridge {
+        @JavascriptInterface
+        public void onQualityDetected(String quality) {
+            runOnUiThread(() -> {
+                String label = "360P";
+                if (quality != null) {
+                    String qLower = quality.toLowerCase();
+                    if (qLower.contains("1080") || qLower.contains("hd1080")) label = "1080P";
+                    else if (qLower.contains("720") || qLower.contains("hd720")) label = "720P";
+                    else if (qLower.contains("480") || qLower.contains("large")) label = "480P";
+                    else if (qLower.contains("360") || qLower.contains("medium")) label = "360P";
+                    else if (qLower.contains("240") || qLower.contains("small")) label = "240P";
+                    else if (qLower.contains("144") || qLower.contains("tiny")) label = "144P";
+                }
+                updateResolutionBadge(label);
+            });
+        }
+    }
+
+    private void updateResolutionBadge(String label) {
+        currentQualityLabel = label;
+        if (btnResolutionStatus != null) {
+            runOnUiThread(() -> {
+                btnResolutionStatus.setText("📺 " + label);
+                if ("360P".equals(label)) {
+                    btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 저해상도 절약 모드)
+                } else {
+                    btnResolutionStatus.setTextColor(Color.parseColor("#64B5F6")); // 하늘색 (고해상도 모드)
                 }
             });
         }
@@ -97,12 +120,13 @@ public class BrowserActivity extends AppCompatActivity {
         setContentView(R.layout.activity_browser);
         webView = findViewById(R.id.webView);
         fullscreenContainer = findViewById(R.id.fullscreenContainer);
-        btnAdBlockStatus = findViewById(R.id.btnAdBlockStatus);
+        btnResolutionStatus = findViewById(R.id.btnResolutionStatus);
 
-        // 1. 광고 차단 상태 배지 버튼 (클릭 시 상태 알림)
-        if (btnAdBlockStatus != null) {
-            btnAdBlockStatus.setOnClickListener(v -> {
-                Toast.makeText(this, "🛡️ 유튜브 실시간 광고 차단 엔진 작동 중 (자동 스킵 활성)", Toast.LENGTH_SHORT).show();
+        // 1. 현재 해상도 상태 표시 배지 버튼 (클릭 시 상태 알림)
+        if (btnResolutionStatus != null) {
+            updateResolutionBadge("360P");
+            btnResolutionStatus.setOnClickListener(v -> {
+                Toast.makeText(this, "📺 현재 동영상 해상도: " + currentQualityLabel + " (기본 360P 저해상도 고정)", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -160,8 +184,9 @@ public class BrowserActivity extends AppCompatActivity {
         settings.setMediaPlaybackRequiresUserGesture(false); // 동영상 자동 재생 허용
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        // 자바스크립트 브릿지 등록 (광고 차단 동작 알림용)
+        // 자바스크립트 브릿지 등록 (광고 차단 및 해상도 감지용)
         webView.addJavascriptInterface(new AdBlockBridge(), "AndroidAdBlock");
+        webView.addJavascriptInterface(new QualityBridge(), "AndroidQuality");
 
         // [HTML5 전체화면 비디오 재생 지원을 위한 WebChromeClient 장착]
         webView.setWebChromeClient(new WebChromeClient() {
@@ -179,20 +204,21 @@ public class BrowserActivity extends AppCompatActivity {
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
                 findViewById(R.id.browserRootLayout).setVisibility(View.GONE);
-                if (fullscreenContainer != null) {
-                    fullscreenContainer.setKeepScreenOn(true);
-                    fullscreenContainer.addView(customView, new FrameLayout.LayoutParams(
-                            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
-                    fullscreenContainer.setVisibility(View.VISIBLE);
-                }
+                fullscreenContainer.setVisibility(View.VISIBLE);
+                fullscreenContainer.setKeepScreenOn(true);
+                fullscreenContainer.addView(view, new FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT));
+
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             }
 
             @Override
             public void onHideCustomView() {
-                if (fullscreenContainer != null && customView != null) {
-                    fullscreenContainer.removeView(customView);
-                    fullscreenContainer.setVisibility(View.GONE);
-                }
+                if (customView == null) return;
+
+                fullscreenContainer.removeView(customView);
+                fullscreenContainer.setVisibility(View.GONE);
                 customView = null;
                 if (customViewCallback != null) {
                     customViewCallback.onCustomViewHidden();
@@ -289,7 +315,7 @@ public class BrowserActivity extends AppCompatActivity {
         handleBackNavigation();
     }
 
-    // 유튜브 광고를 완벽하게 차단하고 스킵하는 복합 스크립트 주입
+    // 유튜브 광고 차단 및 기본 360P 저해상도 자동 고정 스크립트 주입
     private void injectAdBlocker(WebView view) {
         if (view == null) return;
         String adBlockJs =
@@ -310,6 +336,11 @@ public class BrowserActivity extends AppCompatActivity {
                 "      return r;" +
                 "    };" +
                 "  }" +
+                "  try {" +
+                "    var qObj = { data: 'medium', expiration: Date.now() + 315360000000, creation: Date.now() };" +
+                "    localStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
+                "    sessionStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
+                "  } catch(e) {}" +
                 "  function applyAdBlockCss() {" +
                 "    if (!document.getElementById('carhome-adblock-style') && (document.head || document.documentElement)) {" +
                 "      var style = document.createElement('style');" +
@@ -337,7 +368,7 @@ public class BrowserActivity extends AppCompatActivity {
                 "    }" +
                 "  }" +
                 "  applyAdBlockCss();" +
-                "  function eliminateAds() {" +
+                "  function eliminateAdsAndEnforceQuality() {" +
                 "    applyAdBlockCss();" +
                 "    var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
                 "    var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads, [class*=\"ad-showing\"], .ytm-player-ad');" +
@@ -370,14 +401,37 @@ public class BrowserActivity extends AppCompatActivity {
                 "    for (var j = 0; j < dismissBtns.length; j++) {" +
                 "      try { if (dismissBtns[j].offsetParent !== null) dismissBtns[j].click(); } catch(e) {}" +
                 "    }" +
+                "    if (player) {" +
+                "      if (!window.__carHomeUserSelectedQuality) {" +
+                "        if (typeof player.setPlaybackQualityRange === 'function') {" +
+                "          player.setPlaybackQualityRange('medium', 'medium');" +
+                "        }" +
+                "        if (typeof player.setPlaybackQuality === 'function') {" +
+                "          player.setPlaybackQuality('medium');" +
+                "        }" +
+                "      }" +
+                "      if (typeof player.getPlaybackQuality === 'function') {" +
+                "        var q = player.getPlaybackQuality();" +
+                "        if (q && window.AndroidQuality) {" +
+                "          window.AndroidQuality.onQualityDetected(q);" +
+                "        }" +
+                "      }" +
+                "    }" +
                 "  }" +
-                "  eliminateAds();" +
+                "  eliminateAdsAndEnforceQuality();" +
                 "  if (!window.carHomeAdBlockTimer) {" +
-                "    window.carHomeAdBlockTimer = setInterval(eliminateAds, 100);" +
+                "    window.carHomeAdBlockTimer = setInterval(eliminateAdsAndEnforceQuality, 200);" +
                 "  }" +
                 "  if (!window.carHomeAdBlockObs && window.MutationObserver && (document.documentElement || document.body)) {" +
-                "    window.carHomeAdBlockObs = new MutationObserver(function() { eliminateAds(); });" +
+                "    window.carHomeAdBlockObs = new MutationObserver(function() { eliminateAdsAndEnforceQuality(); });" +
                 "    window.carHomeAdBlockObs.observe(document.documentElement || document.body, { childList: true, subtree: true });" +
+                "  }" +
+                "  if (!window.__carHomeQualityEventAttached) {" +
+                "    window.__carHomeQualityEventAttached = true;" +
+                "    document.addEventListener('yt-navigate-finish', function() {" +
+                "      window.__carHomeUserSelectedQuality = false;" +
+                "      eliminateAdsAndEnforceQuality();" +
+                "    });" +
                 "  }" +
                 "})();";
 
@@ -391,29 +445,33 @@ public class BrowserActivity extends AppCompatActivity {
         updateMenuLayout(newConfig.orientation);
     }
 
-    // 가로/세로 모드에 따라 메뉴바와 웹뷰의 구조를 완전히 재배치하는 메서드
+    // 화면 회전 시 4x3 툴바 레이아웃 자동 변환 메서드
     private void updateMenuLayout(int orientation) {
-        LinearLayout rootLayout = findViewById(R.id.browserRootLayout);
         LinearLayout menuLayout = findViewById(R.id.menuLayout);
         LinearLayout menuGroup1 = findViewById(R.id.menuGroup1);
         LinearLayout menuGroup2 = findViewById(R.id.menuGroup2);
         LinearLayout menuGroup3 = findViewById(R.id.menuGroup3);
+        LinearLayout browserRootLayout = findViewById(R.id.browserRootLayout);
+
+        if (menuLayout == null || menuGroup1 == null || menuGroup2 == null || menuGroup3 == null || browserRootLayout == null) {
+            return;
+        }
 
         if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // 가로 모드: 전체를 가로로 분할, 메뉴바는 왼쪽 1줄 기둥으로 설정
-            rootLayout.setOrientation(LinearLayout.HORIZONTAL);
-            menuLayout.setOrientation(LinearLayout.VERTICAL);
+            // [가로 모드]: 좌측에 3단 메뉴바를 세로로 배치 (폭 320dp)
+            browserRootLayout.setOrientation(LinearLayout.HORIZONTAL);
+            menuLayout.setOrientation(LinearLayout.HORIZONTAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
-                    (int) (96 * getResources().getDisplayMetrics().density), // 메뉴바 너비를 96dp로 설정
+                    (int) (320 * getResources().getDisplayMetrics().density),
                     LinearLayout.LayoutParams.MATCH_PARENT));
 
-            // 세 그룹도 모두 세로 기둥 방향으로 전환하여 1줄로 통합 배치
+            // 세 그룹을 세로 줄로 전환하여 좌우 3개 열로 배치
             menuGroup1.setOrientation(LinearLayout.VERTICAL);
-            menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+            menuGroup1.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
             menuGroup2.setOrientation(LinearLayout.VERTICAL);
-            menuGroup2.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+            menuGroup2.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
             menuGroup3.setOrientation(LinearLayout.VERTICAL);
-            menuGroup3.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f));
+            menuGroup3.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
 
             webView.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1.0f));
 
@@ -421,12 +479,12 @@ public class BrowserActivity extends AppCompatActivity {
             setButtonParams(menuGroup2, true);
             setButtonParams(menuGroup3, true);
         } else {
-            // 세로 모드: 전체를 세로로 분할, 메뉴바는 맨 위 3줄로 설정
-            rootLayout.setOrientation(LinearLayout.VERTICAL);
+            // [세로 모드]: 상단에 3단 메뉴바를 가로로 배치 (높이 180dp)
+            browserRootLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setOrientation(LinearLayout.VERTICAL);
             menuLayout.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    (int) (180 * getResources().getDisplayMetrics().density))); // 3줄 180dp
+                    (int) (180 * getResources().getDisplayMetrics().density)));
 
             // 세 그룹을 가로 줄로 전환하여 위아래 3층으로 배치
             menuGroup1.setOrientation(LinearLayout.HORIZONTAL);
@@ -477,6 +535,7 @@ public class BrowserActivity extends AppCompatActivity {
     private void setVideoQuality(String qualityLevel, String label) {
         if (webView != null) {
             String js = "(function() {" +
+                    "  window.__carHomeUserSelectedQuality = true;" +
                     "  var p = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
                     "  if (p) {" +
                     "    if (typeof p.setPlaybackQualityRange === 'function') {" +
@@ -485,10 +544,14 @@ public class BrowserActivity extends AppCompatActivity {
                     "    if (typeof p.setPlaybackQuality === 'function') {" +
                     "      p.setPlaybackQuality('" + qualityLevel + "');" +
                     "    }" +
+                    "    if (window.AndroidQuality) {" +
+                    "      window.AndroidQuality.onQualityDetected('" + qualityLevel + "');" +
+                    "    }" +
                     "  }" +
                     "})();";
             webView.evaluateJavascript(js, null);
-            Toast.makeText(this, label + " 해상도 설정 요청", Toast.LENGTH_SHORT).show();
+            updateResolutionBadge(label);
+            Toast.makeText(this, label + " 해상도로 변경 요청 📺", Toast.LENGTH_SHORT).show();
         }
     }
 
