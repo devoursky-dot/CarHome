@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -175,8 +176,21 @@ public class MacroAccessibilityService extends AccessibilityService {
         });
     }
 
+    // 화면 잠금(화면 끄기 / 절전 모드) 수행
+    public void lockScreen() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            boolean success = performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);
+            Log.d(TAG, "performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN) result: " + success);
+        }
+    }
+
     // 최근 실행 앱 화면을 열고 모두 닫기 버튼을 클릭하는 매크로
     public void closeAllRecentApps() {
+        closeAllRecentAppsAndLock(false);
+    }
+
+    // 최근 실행 앱 모두 닫기 및 화면 잠금(절전 모드) 연계 매크로
+    public void closeAllRecentAppsAndLock(boolean andLockScreen) {
         performGlobalAction(GLOBAL_ACTION_RECENTS);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
@@ -211,6 +225,14 @@ public class MacroAccessibilityService extends AccessibilityService {
             } else {
                 Toast.makeText(this, "모두 닫기 버튼을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
             }
-        }, 3500);
+
+            // 앱 닫기 완료 후 화면 잠금(절전 모드)으로 즉시 전환
+            if (andLockScreen) {
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    Toast.makeText(this, "💤 절전 모드: 화면을 잠급니다.", Toast.LENGTH_SHORT).show();
+                    lockScreen();
+                }, 1200);
+            }
+        }, 3000);
     }
 }

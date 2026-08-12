@@ -144,11 +144,11 @@ public class FloatingService extends Service {
                     }
                 }, 2000);
             } else if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
-                Toast.makeText(context, "전원 차단: 10초 뒤 앱을 자동 정리합니다 🧹", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "전원 차단 감지: 10초 뒤 모든 앱 정리 및 화면 잠금(절전)을 실행합니다 🧹💤", Toast.LENGTH_LONG).show();
                 powerOffHandler.removeCallbacksAndMessages(null);
                 powerOffHandler.postDelayed(() -> {
-                    executeCloseAllAppsMacro();
-                    Toast.makeText(context, "운행 종료: 모두 닫기 완료!", Toast.LENGTH_SHORT).show();
+                    cleanMemory(); // 1. 백그라운드 배터리 소모 프로세스 & 캐시 일괄 청소
+                    executeCloseAllAppsAndLockMacro(); // 2. 최근 앱 모두 닫기 & 화면 잠금(절전 모드) 전환
                 }, 10000);
             }
         }
@@ -513,9 +513,9 @@ public class FloatingService extends Service {
         }
     }
 
-    private void executeCloseAllAppsMacro() {
+    private void executeCloseAllAppsAndLockMacro() {
         if (MacroAccessibilityService.instance != null) {
-            MacroAccessibilityService.instance.closeAllRecentApps();
+            MacroAccessibilityService.instance.closeAllRecentAppsAndLock(true);
         }
     }
 
