@@ -31,14 +31,14 @@
                 android:layout_weight="1"
                 android:orientation="horizontal">
 
-                <!-- 현재 해상도 실시간 표시 배지 버튼 (기본 240P) -->
+                <!-- 현재 해상도 실시간 표시 배지 버튼 (기본 144P) -->
                 <TextView
                     android:id="@+id/btnResolutionStatus"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:background="@drawable/bg_round_btn"
-                    android:text="📺 240P"
+                    android:text="📺 144P"
                     android:textColor="#3DDC84"
                     android:textSize="16sp"
                     android:textStyle="bold"
@@ -154,13 +154,27 @@
                     android:focusable="true" />
             </LinearLayout>
 
-            <!-- 세 번째 줄 (Group 3): 해상도 조절 (240P, 360P, 480P, 720P, 1080P) -->
+            <!-- 세 번째 줄 (Group 3): 해상도 조절 (144P, 240P, 360P, 480P, 720P, 1080P) -->
             <LinearLayout
                 android:id="@+id/menuGroup3"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnRes144"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_round_btn"
+                    android:text="144P"
+                    android:textColor="#3DDC84"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true" />
 
                 <TextView
                     android:id="@+id/btnRes240"
@@ -170,7 +184,7 @@
                     android:background="@drawable/bg_round_btn"
                     android:text="240P"
                     android:textColor="#3DDC84"
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -184,7 +198,7 @@
                     android:background="@drawable/bg_round_btn"
                     android:text="360P"
                     android:textColor="#3DDC84"
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -198,7 +212,7 @@
                     android:background="@drawable/bg_round_btn"
                     android:text="480P"
                     android:textColor="#3DDC84"
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -212,7 +226,7 @@
                     android:background="@drawable/bg_round_btn"
                     android:text="720P"
                     android:textColor="#3DDC84"
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -226,7 +240,7 @@
                     android:background="@drawable/bg_round_btn"
                     android:text="1080P"
                     android:textColor="#3DDC84"
-                    android:textSize="15sp"
+                    android:textSize="14sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"

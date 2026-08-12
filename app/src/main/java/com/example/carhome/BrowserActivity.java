@@ -38,7 +38,7 @@ public class BrowserActivity extends AppCompatActivity {
     private WebChromeClient.CustomViewCallback customViewCallback;
     private FrameLayout fullscreenContainer;
     private TextView btnResolutionStatus;
-    private String currentQualityLabel = "240P";
+    private String currentQualityLabel = "144P";
 
     private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
@@ -62,7 +62,7 @@ public class BrowserActivity extends AppCompatActivity {
         @JavascriptInterface
         public void onQualityDetected(String quality) {
             runOnUiThread(() -> {
-                String label = "240P";
+                String label = "144P";
                 if (quality != null) {
                     String qLower = quality.toLowerCase();
                     if (qLower.contains("1080") || qLower.contains("hd1080")) label = "1080P";
@@ -82,8 +82,8 @@ public class BrowserActivity extends AppCompatActivity {
         if (btnResolutionStatus != null) {
             runOnUiThread(() -> {
                 btnResolutionStatus.setText("📺 " + label);
-                if ("240P".equals(label)) {
-                    btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 초절약 모드)
+                if ("144P".equals(label)) {
+                    btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 최저화질 초절약 모드)
                 } else {
                     btnResolutionStatus.setTextColor(Color.parseColor("#64B5F6")); // 하늘색 (상위 화질 모드)
                 }
@@ -122,11 +122,11 @@ public class BrowserActivity extends AppCompatActivity {
         fullscreenContainer = findViewById(R.id.fullscreenContainer);
         btnResolutionStatus = findViewById(R.id.btnResolutionStatus);
 
-        // 1. 현재 해상도 상태 표시 배지 버튼 (기본 240P)
+        // 1. 현재 해상도 상태 표시 배지 버튼 (기본 144P)
         if (btnResolutionStatus != null) {
-            updateResolutionBadge("240P");
+            updateResolutionBadge("144P");
             btnResolutionStatus.setOnClickListener(v -> {
-                Toast.makeText(this, "📺 현재 동영상 해상도: " + currentQualityLabel + " (기본 240P 초절약 고정)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "📺 현재 동영상 해상도: " + currentQualityLabel + " (기본 144P 초절약 고정)", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -150,13 +150,15 @@ public class BrowserActivity extends AppCompatActivity {
         btnRewind10.setOnClickListener(v -> skipVideo(-10));
         btnForward10.setOnClickListener(v -> skipVideo(10));
 
-        // 4. 툴바 해상도 조절 버튼 연결 (240P, 360P, 480P, 720P, 1080P)
+        // 4. 툴바 해상도 조절 버튼 연결 (144P, 240P, 360P, 480P, 720P, 1080P)
+        TextView btnRes144 = findViewById(R.id.btnRes144);
         TextView btnRes240 = findViewById(R.id.btnRes240);
         TextView btnRes360 = findViewById(R.id.btnRes360);
         TextView btnRes480 = findViewById(R.id.btnRes480);
         TextView btnRes720 = findViewById(R.id.btnRes720);
         TextView btnRes1080 = findViewById(R.id.btnRes1080);
 
+        if (btnRes144 != null) btnRes144.setOnClickListener(v -> setVideoQuality("tiny", "144P"));
         if (btnRes240 != null) btnRes240.setOnClickListener(v -> setVideoQuality("small", "240P"));
         if (btnRes360 != null) btnRes360.setOnClickListener(v -> setVideoQuality("medium", "360P"));
         if (btnRes480 != null) btnRes480.setOnClickListener(v -> setVideoQuality("large", "480P"));
@@ -317,7 +319,7 @@ public class BrowserActivity extends AppCompatActivity {
         handleBackNavigation();
     }
 
-    // 유튜브 광고 차단 및 기본 240P 초저해상도 자동 고정 스크립트 주입
+    // 유튜브 광고 차단 및 기본 144P 극단적 초저해상도 자동 고정 스크립트 주입
     private void injectAdBlocker(WebView view) {
         if (view == null) return;
         String adBlockJs =
@@ -339,7 +341,7 @@ public class BrowserActivity extends AppCompatActivity {
                 "    };" +
                 "  }" +
                 "  try {" +
-                "    var qObj = { data: 'small', expiration: Date.now() + 315360000000, creation: Date.now() };" +
+                "    var qObj = { data: 'tiny', expiration: Date.now() + 315360000000, creation: Date.now() };" +
                 "    localStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
                 "    sessionStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
                 "  } catch(e) {}" +
@@ -406,10 +408,10 @@ public class BrowserActivity extends AppCompatActivity {
                 "    if (player) {" +
                 "      if (!window.__carHomeUserSelectedQuality) {" +
                 "        if (typeof player.setPlaybackQualityRange === 'function') {" +
-                "          player.setPlaybackQualityRange('small', 'small');" +
+                "          player.setPlaybackQualityRange('tiny', 'tiny');" +
                 "        }" +
                 "        if (typeof player.setPlaybackQuality === 'function') {" +
-                "          player.setPlaybackQuality('small');" +
+                "          player.setPlaybackQuality('tiny');" +
                 "        }" +
                 "      }" +
                 "      if (typeof player.getPlaybackQuality === 'function') {" +
@@ -533,7 +535,7 @@ public class BrowserActivity extends AppCompatActivity {
         }
     }
 
-    // 유튜브 해상도(240p, 360p, 480p, 720p, 1080p) 변경 메서드
+    // 유튜브 해상도(144p, 240p, 360p, 480p, 720p, 1080p) 변경 메서드
     private void setVideoQuality(String qualityLevel, String label) {
         if (webView != null) {
             String js = "(function() {" +
