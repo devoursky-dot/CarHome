@@ -57,7 +57,48 @@ public class SettingsActivity extends AppCompatActivity {
         currentX = prefs.getInt("tmap_x", 1130);
         currentY = prefs.getInt("tmap_y", 70);
 
-        // 1. 티맵 실행 화면 모드 (전체화면 vs 팝업창 모드 선택)
+        // 1. 티맵 안심주행 플로팅 HUD & 과속 경고 토글 스위치 및 버튼 바인딩
+        @SuppressLint("UseSwitchCompatOrMaterialCode")
+        Switch switchTmapHud = findViewById(R.id.switchTmapHud);
+        TextView tvTmapHudDescription = findViewById(R.id.tvTmapHudDescription);
+        View btnNotificationPermission = findViewById(R.id.btnNotificationPermission);
+        View btnTestTmapHud = findViewById(R.id.btnTestTmapHud);
+
+        boolean isHudEnabled = prefs.getBoolean("tmap_hud_enabled", true);
+        if (switchTmapHud != null) {
+            switchTmapHud.setChecked(isHudEnabled);
+            updateTmapHudUI(isHudEnabled, tvTmapHudDescription);
+            switchTmapHud.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.edit().putBoolean("tmap_hud_enabled", isChecked).apply();
+                updateTmapHudUI(isChecked, tvTmapHudDescription);
+                Intent intent = new Intent("com.example.carhome.UPDATE_SETTINGS");
+                intent.putExtra("key", "tmap_hud_enabled");
+                sendBroadcast(intent);
+                Toast.makeText(this, isChecked ? "🛡️ 티맵 안심주행 HUD: [켜짐]" : "🛡️ 티맵 안심주행 HUD: [꺼짐]", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        if (btnNotificationPermission != null) {
+            btnNotificationPermission.setOnClickListener(v -> {
+                try {
+                    startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+                    Toast.makeText(this, "CarHome을 찾아 [알림 접근 허용]을 켜주세요! 🔔", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, "설정 창을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        if (btnTestTmapHud != null) {
+            btnTestTmapHud.setOnClickListener(v -> {
+                Intent intent = new Intent("com.example.carhome.UPDATE_SETTINGS");
+                intent.putExtra("key", "tmap_hud_test");
+                sendBroadcast(intent);
+                Toast.makeText(this, "🎯 티맵 안심주행 HUD 테스트 팝업을 띄웠습니다!", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        // 2. 티맵 실행 화면 모드 (전체화면 vs 팝업창 모드 선택)
         @SuppressLint("UseSwitchCompatOrMaterialCode")
         Switch switchTmapPopupMode = findViewById(R.id.switchTmapPopupMode);
         TextView tvTmapModeDescription = findViewById(R.id.tvTmapModeDescription);
@@ -173,6 +214,18 @@ public class SettingsActivity extends AppCompatActivity {
 
         // 설정 화면 열릴 때 빨간색 미리보기 조준원 초기 표시
         showPreviewCircle(currentX, currentY);
+    }
+
+    private void updateTmapHudUI(boolean isEnabled, TextView tvDesc) {
+        if (tvDesc != null) {
+            if (isEnabled) {
+                tvDesc.setText("현재: 안심주행 시 플로팅 HUD 팝업 및 과속 경고 작동 중");
+                tvDesc.setTextColor(Color.parseColor("#3DDC84")); // 초록색
+            } else {
+                tvDesc.setText("현재: 안심주행 플로팅 HUD 팝업 꺼짐");
+                tvDesc.setTextColor(Color.parseColor("#FF5252")); // 빨간색
+            }
+        }
     }
 
     private void updateTmapModeUI(boolean isPopup, TextView tvDesc, View slidersLayout) {

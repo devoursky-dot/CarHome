@@ -62,6 +62,17 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!-- 티맵 안심주행 실시간 감지를 위한 알림 리스너 서비스 등록 -->
+        <service
+            android:name=".TmapNotificationListener"
+            android:label="CarHome 티맵 알림 감지 서비스"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

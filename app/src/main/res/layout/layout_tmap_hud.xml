@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/hudRootLayout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/bg_tmap_hud_normal"
+    android:gravity="center_vertical"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- 1. 제한속도 도로 표지판 (원형 빨간 테두리) -->
+    <TextView
+        android:id="@+id/tvHudSpeedLimit"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_speed_limit_sign"
+        android:text="60"
+        android:textColor="#111111"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginEnd="12dp" />
+
+    <!-- 2. 실시간 현재 주행 속도 (대형 볼드 디지털) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginEnd="14dp">
+
+        <TextView
+            android:id="@+id/tvHudCurrentSpeed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-black"
+            android:includeFontPadding="false" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="km/h"
+            android:textColor="#B0BEC5"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+
+    <!-- 3. 구분선 -->
+    <View
+        android:layout_width="1dp"
+        android:layout_height="36dp"
+        android:background="#33FFFFFF"
+        android:layout_marginEnd="12dp" />
+
+    <!-- 4. 카메라 단속 정보 & 남은 거리 카운트다운 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="start|center_vertical">
+
+        <TextView
+            android:id="@+id/tvHudDistance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📍 600m"
+            android:textColor="#FFB300"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false" />
+
+        <TextView
+            android:id="@+id/tvHudCameraType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="안심주행 중"
+            android:textColor="#90A4AE"
+            android:textSize="11sp"
+            android:layout_marginTop="2dp"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+
+</LinearLayout>

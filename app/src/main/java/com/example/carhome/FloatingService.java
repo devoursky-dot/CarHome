@@ -20,7 +20,13 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import java.lang.reflect.Method;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -29,6 +35,7 @@ import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -60,6 +67,33 @@ public class FloatingService extends Service {
     private WindowManager.LayoutParams params;
     private Handler autoLaunchHandler = new Handler(Looper.getMainLooper());
     private Handler powerOffHandler = new Handler(Looper.getMainLooper());
+
+    // TMAP 안심주행 전용 스마트 HUD 뷰 및 GPS / 사운드 경고 엔진
+    private View hudView;
+    private WindowManager.LayoutParams hudParams;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+    private int currentGpsSpeed = 0;
+    private boolean isSafeDrivingActive = false;
+    private int currentSpeedLimit = 0;
+    private int currentDistance = 0;
+    private String currentCameraType = "안심주행 중";
+    private ToneGenerator toneGenerator;
+    private long lastBeepTime = 0;
+
+    private final BroadcastReceiver tmapHudReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.example.carhome.TMAP_HUD_UPDATE".equals(intent.getAction())) {
+                isSafeDrivingActive = intent.getBooleanExtra("isSafeDriving", false);
+                currentSpeedLimit = intent.getIntExtra("speedLimit", 0);
+                currentDistance = intent.getIntExtra("distanceMeters", 0);
+                String type = intent.getStringExtra("cameraType");
+                if (type != null) currentCameraType = type;
+                updateHudView();
+            }
+        }
+    };
 
     private final BroadcastReceiver settingsReceiver = new BroadcastReceiver() {
         @Override
@@ -99,6 +133,16 @@ public class FloatingService extends Service {
 
                     hideHandler.removeCallbacks(hideRunnable);
                     hideHandler.postDelayed(hideRunnable, 3000);
+                } else if ("tmap_hud_test".equals(key)) {
+                    // 설정 화면에서 HUD 테스트 팝업 요청
+                    isSafeDrivingActive = true;
+                    currentSpeedLimit = 60;
+                    currentDistance = 500;
+                    currentCameraType = "🚨 과속단속 (테스트)";
+                    currentGpsSpeed = 68;
+                    updateHudView();
+                } else if ("tmap_hud_enabled".equals(key)) {
+                    updateHudView();
                 }
                 try {
                     windowManager.updateViewLayout(floatingView, params);
@@ -192,7 +236,7 @@ public class FloatingService extends Service {
                     "CarHome 상시 서비스",
                     NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("차량용 플로팅 위젯과 시동 자동화를 유지합니다.");
+            channel.setDescription("차량용 플로팅 위젯과 안심주행 HUD를 유지합니다.");
             NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
@@ -207,8 +251,8 @@ public class FloatingService extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("CarHome 차량용 서비스 동작 중")
-                .setContentText("플로팅 위젯과 시동 자동화가 활성화되어 있습니다.")
+                .setContentTitle("CarHome 안심주행 HUD 가동 중")
+                .setContentText("티맵 안심주행 과속 경고 및 플로팅 위젯이 활성화되어 있습니다.")
                 .setContentIntent(pendingIntent)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true);
@@ -321,11 +365,212 @@ public class FloatingService extends Service {
         registerReceiver(powerReceiver, filter);
 
         IntentFilter settingsFilter = new IntentFilter("com.example.carhome.UPDATE_SETTINGS");
+        IntentFilter tmapFilter = new IntentFilter("com.example.carhome.TMAP_HUD_UPDATE");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(settingsReceiver, settingsFilter, Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(tmapHudReceiver, tmapFilter, Context.RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(settingsReceiver, settingsFilter);
+            registerReceiver(tmapHudReceiver, tmapFilter);
         }
+
+        // TMAP 안심주행 HUD 뷰 및 GPS 속도 측정 초기화
+        initTmapHudView();
+        startGpsTracking();
+
+        // TmapNotificationListener 직접 리스너 콜백 연결
+        TmapNotificationListener.setUpdateListener((isActive, speedLimit, distance, cameraType, rawText) -> {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                isSafeDrivingActive = isActive;
+                currentSpeedLimit = speedLimit;
+                currentDistance = distance;
+                if (cameraType != null) currentCameraType = cameraType;
+                updateHudView();
+            });
+        });
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void initTmapHudView() {
+        if (hudView != null) return;
+
+        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
+        hudView = inflater.inflate(R.layout.layout_tmap_hud, null);
+
+        int layoutFlag = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                : WindowManager.LayoutParams.TYPE_PHONE;
+
+        hudParams = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                layoutFlag,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                PixelFormat.TRANSLUCENT
+        );
+
+        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+        hudParams.gravity = Gravity.TOP | Gravity.START;
+        hudParams.x = prefs.getInt("tmap_hud_x", 120);
+        hudParams.y = prefs.getInt("tmap_hud_y", 50);
+
+        hudView.setVisibility(View.GONE);
+
+        try {
+            windowManager.addView(hudView, hudParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 터치 드래그로 화면 어디든 자유롭게 이동 & 위치 저장
+        hudView.setOnTouchListener(new View.OnTouchListener() {
+            private float initialTouchX, initialTouchY;
+            private int initialX, initialY;
+            private boolean isMoving = false;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = hudParams.x;
+                        initialY = hudParams.y;
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
+                        isMoving = false;
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        int dx = (int) (event.getRawX() - initialTouchX);
+                        int dy = (int) (event.getRawY() - initialTouchY);
+                        if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || isMoving) {
+                            isMoving = true;
+                            hudParams.x = initialX + dx;
+                            hudParams.y = initialY + dy;
+                            try {
+                                windowManager.updateViewLayout(hudView, hudParams);
+                            } catch (Exception ignored) {}
+                        }
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        if (isMoving) {
+                            prefs.edit().putInt("tmap_hud_x", hudParams.x).putInt("tmap_hud_y", hudParams.y).apply();
+                        } else {
+                            // 단순 탭 터치 시 티맵 전면 실행
+                            launchApp("com.skt.tmap.ku");
+                        }
+                        return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void updateHudView() {
+        if (hudView == null) {
+            initTmapHudView();
+        }
+
+        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+        boolean hudEnabled = prefs.getBoolean("tmap_hud_enabled", true);
+
+        if (!hudEnabled || !isSafeDrivingActive) {
+            if (hudView != null) hudView.setVisibility(View.GONE);
+            return;
+        }
+
+        if (hudView.getVisibility() != View.VISIBLE) {
+            hudView.setVisibility(View.VISIBLE);
+        }
+
+        TextView tvSpeedLimit = hudView.findViewById(R.id.tvHudSpeedLimit);
+        TextView tvCurrentSpeed = hudView.findViewById(R.id.tvHudCurrentSpeed);
+        TextView tvDistance = hudView.findViewById(R.id.tvHudDistance);
+        TextView tvCameraType = hudView.findViewById(R.id.tvHudCameraType);
+
+        if (tvCurrentSpeed != null) {
+            tvCurrentSpeed.setText(String.valueOf(currentGpsSpeed));
+        }
+
+        if (tvSpeedLimit != null) {
+            if (currentSpeedLimit > 0) {
+                tvSpeedLimit.setText(String.valueOf(currentSpeedLimit));
+                tvSpeedLimit.setVisibility(View.VISIBLE);
+            } else {
+                tvSpeedLimit.setVisibility(View.GONE);
+            }
+        }
+
+        if (tvDistance != null) {
+            if (currentDistance > 0) {
+                tvDistance.setText("📍 " + currentDistance + "m");
+            } else {
+                tvDistance.setText("🧭 주행중");
+            }
+        }
+
+        if (tvCameraType != null) {
+            tvCameraType.setText(currentCameraType != null ? currentCameraType : "안심주행 중");
+        }
+
+        // 과속 판별 및 시각/청각 2중 경고
+        boolean isOverSpeed = (currentSpeedLimit > 0 && currentGpsSpeed > currentSpeedLimit);
+
+        if (isOverSpeed) {
+            hudView.setBackgroundResource(R.drawable.bg_tmap_hud_warning);
+            if (tvCurrentSpeed != null) tvCurrentSpeed.setTextColor(Color.parseColor("#FF1744"));
+
+            long now = System.currentTimeMillis();
+            if (now - lastBeepTime > 1200) {
+                lastBeepTime = now;
+                playLoudWarningBeep();
+            }
+        } else {
+            hudView.setBackgroundResource(R.drawable.bg_tmap_hud_normal);
+            if (tvCurrentSpeed != null) tvCurrentSpeed.setTextColor(Color.WHITE);
+        }
+    }
+
+    private void playLoudWarningBeep() {
+        try {
+            if (toneGenerator == null) {
+                toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+            }
+            toneGenerator.startTone(ToneGenerator.TONE_CDMA_ALERT_NETWORK_LITE, 350);
+        } catch (Exception e) {
+            try {
+                ToneGenerator backup = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+                backup.startTone(ToneGenerator.TONE_PROP_BEEP2, 350);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void startGpsTracking() {
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        if (locationManager == null) return;
+
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (location != null && location.hasSpeed()) {
+                    currentGpsSpeed = Math.round(location.getSpeed() * 3.6f);
+                } else {
+                    currentGpsSpeed = 0;
+                }
+                if (isSafeDrivingActive && hudView != null && hudView.getVisibility() == View.VISIBLE) {
+                    updateHudView();
+                }
+            }
+            @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
+            @Override public void onProviderEnabled(String provider) {}
+            @Override public void onProviderDisabled(String provider) {}
+        };
+
+        try {
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 0.5f, locationListener);
+            }
+        } catch (SecurityException ignored) {}
     }
 
     private void applySizesToViews(SharedPreferences prefs) {
@@ -367,7 +612,6 @@ public class FloatingService extends Service {
         am.getMemoryInfo(beforeMem);
 
         // [1. 절대 강제 종료하면 안 되는 필수 보호 화이트리스트]
-        // CarHome, 티맵 내비게이션, 시스템 키보드, 삼성 런처, 시스템 UI, 블루투스, 전화/LTE, GPS 등
         Set<String> protectedWhitelist = new HashSet<>(Arrays.asList(
                 getPackageName(),
                 "com.skt.tmap.ku",
@@ -463,7 +707,6 @@ public class FloatingService extends Service {
                 boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
 
                 if (popupEnabled) {
-
                     int left = prefs.getInt("tmap_popup_x", 1050);
                     int top = prefs.getInt("tmap_popup_y", 50);
                     int width = prefs.getInt("tmap_popup_w", 840);
@@ -489,7 +732,7 @@ public class FloatingService extends Service {
                 startActivity(intent);
             }
         } else {
-            Toast.makeText(this, "앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -497,7 +740,6 @@ public class FloatingService extends Service {
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
         int macroCount = prefs.getInt("tmap_macro_count", 6);
         if (macroCount <= 0) {
-            // 0회 설정 시 매크로 실행 안 함
             return;
         }
 
@@ -571,80 +813,78 @@ public class FloatingService extends Service {
             btn.setLayoutParams(lp);
 
             btn.setOnClickListener(v -> {
-                Intent intent = new Intent(this, BrowserActivity.class);
-                intent.putExtra("url", url);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
+                Intent browserIntent = new Intent(this, BrowserActivity.class);
+                browserIntent.putExtra("url", url);
+                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(browserIntent);
                 hideHandler.post(hideRunnable);
             });
 
-            final int index = i;
+            final int idx = i;
             btn.setOnLongClickListener(v -> {
-                showDeleteConfirmDialog(name, index, channelNames, channelUrls);
+                showDeleteConfirmDialog(name, idx, channelNames, channelUrls);
                 return true;
             });
 
             container.addView(btn);
         }
 
-        TextView addBtn = new TextView(this);
-        addBtn.setText("➕\n추가");
-        addBtn.setTextColor(Color.WHITE);
-        addBtn.setTextSize(14);
-        addBtn.setGravity(Gravity.CENTER);
-        addBtn.setTypeface(null, android.graphics.Typeface.BOLD);
-        addBtn.setBackgroundResource(R.drawable.bg_round_btn);
+        TextView btnAdd = new TextView(this);
+        btnAdd.setText("+\n추가");
+        btnAdd.setTextColor(Color.parseColor("#4CAF50"));
+        btnAdd.setTextSize(16);
+        btnAdd.setGravity(Gravity.CENTER);
+        btnAdd.setTypeface(null, android.graphics.Typeface.BOLD);
+        btnAdd.setBackgroundResource(R.drawable.bg_round_btn);
 
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(sizeInPx, sizeInPx);
-        addBtn.setLayoutParams(lp);
+        LinearLayout.LayoutParams lpAdd = new LinearLayout.LayoutParams(sizeInPx, sizeInPx);
+        btnAdd.setLayoutParams(lpAdd);
 
-        addBtn.setOnClickListener(v -> showAddChannelDialog(channelNames, channelUrls));
-
-        container.addView(addBtn);
+        btnAdd.setOnClickListener(v -> showAddChannelDialog(channelNames, channelUrls));
+        container.addView(btnAdd);
     }
 
     private String formatChannelName(String name) {
-        StringBuilder truncated = new StringBuilder();
-        int length = 0;
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            int w = (c >= 0xAC00 && c <= 0xD7A3) || (c >= 0x3131 && c <= 0x318E) ? 2 : 1;
-            if (length + w > 16) break;
-            truncated.append(c);
-            length += w;
-        }
-        return truncated.toString().replaceFirst(" ", "\n");
+        if (name == null) return "";
+        if (name.length() <= 4) return name;
+        int mid = (name.length() + 1) / 2;
+        return name.substring(0, mid) + "\n" + name.substring(mid);
     }
 
     private void showAddChannelDialog(List<String> channelNames, List<String> channelUrls) {
         ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
         AlertDialog.Builder builder = new AlertDialog.Builder(contextThemeWrapper);
-        builder.setTitle("새 채널 추가");
+        builder.setTitle("새 유튜브 채널 바로가기 추가");
 
         LinearLayout layout = new LinearLayout(contextThemeWrapper);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 40, 50, 10);
 
-        EditText nameInput = new EditText(contextThemeWrapper);
-        nameInput.setHint("채널 이름 (예: 워크맨)");
-        layout.addView(nameInput);
+        final EditText etName = new EditText(contextThemeWrapper);
+        etName.setHint("채널/방송 이름 (예: YTN)");
+        layout.addView(etName);
 
-        EditText urlInput = new EditText(contextThemeWrapper);
-        urlInput.setHint("유튜브 URL 주소 (https://...)");
-        layout.addView(urlInput);
+        final EditText etUrl = new EditText(contextThemeWrapper);
+        etUrl.setHint("유튜브 링크 (URL)");
+        layout.addView(etUrl);
 
         builder.setView(layout);
+
         builder.setPositiveButton("추가", (dialog, which) -> {
-            String name = nameInput.getText().toString().trim();
-            String url = urlInput.getText().toString().trim();
+            String name = etName.getText().toString().trim();
+            String url = etUrl.getText().toString().trim();
+
             if (!name.isEmpty() && !url.isEmpty()) {
+                if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                    url = "https://" + url;
+                }
                 channelNames.add(name);
                 channelUrls.add(url);
                 saveChannels(channelNames, channelUrls);
-                Toast.makeText(this, "추가되었습니다.", Toast.LENGTH_SHORT).show();
                 populateChannelButtons();
+                Toast.makeText(this, "'" + name + "' 채널이 추가되었습니다.", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "이름과 URL을 모두 입력해주세요.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "이름과 주소를 모두 입력해주세요.", Toast.LENGTH_SHORT).show();
             }
         });
         builder.setNegativeButton("취소", null);
@@ -703,7 +943,11 @@ public class FloatingService extends Service {
         if (powerOffHandler != null) powerOffHandler.removeCallbacksAndMessages(null);
         if (powerReceiver != null) { try { unregisterReceiver(powerReceiver); } catch (Exception e) {} }
         if (settingsReceiver != null) { try { unregisterReceiver(settingsReceiver); } catch (Exception e) {} }
+        if (tmapHudReceiver != null) { try { unregisterReceiver(tmapHudReceiver); } catch (Exception e) {} }
         if (hideHandler != null && hideRunnable != null) hideHandler.removeCallbacks(hideRunnable);
-        if (floatingView != null) windowManager.removeView(floatingView);
+        if (floatingView != null) { try { windowManager.removeView(floatingView); } catch (Exception ignored) {} }
+        if (hudView != null) { try { windowManager.removeView(hudView); } catch (Exception ignored) {} }
+        if (locationManager != null && locationListener != null) { try { locationManager.removeUpdates(locationListener); } catch (Exception ignored) {} }
+        if (toneGenerator != null) { try { toneGenerator.release(); } catch (Exception ignored) {} }
     }
 }
