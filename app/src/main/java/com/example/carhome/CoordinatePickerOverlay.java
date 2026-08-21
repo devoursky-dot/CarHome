@@ -212,7 +212,7 @@ public class CoordinatePickerOverlay {
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (MacroAccessibilityService.instance != null) {
-                MacroAccessibilityService.instance.performHumanClick(currentX, currentY);
+                MacroAccessibilityService.instance.performClick(currentX, currentY);
             }
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 if (imgCrosshair != null) imgCrosshair.setVisibility(View.VISIBLE);

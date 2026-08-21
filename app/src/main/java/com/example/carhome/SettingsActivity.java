@@ -51,54 +51,15 @@ public class SettingsActivity extends AppCompatActivity {
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
         ImageView btnClose = findViewById(R.id.btnCloseSettings);
-        btnClose.setOnClickListener(v -> finish());
+        if (btnClose != null) {
+            btnClose.setOnClickListener(v -> finish());
+        }
 
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
         currentX = prefs.getInt("tmap_x", 1130);
         currentY = prefs.getInt("tmap_y", 70);
 
-        // 1. 티맵 안심주행 플로팅 HUD & 과속 경고 토글 스위치 및 버튼 바인딩
-        @SuppressLint("UseSwitchCompatOrMaterialCode")
-        Switch switchTmapHud = findViewById(R.id.switchTmapHud);
-        TextView tvTmapHudDescription = findViewById(R.id.tvTmapHudDescription);
-        View btnNotificationPermission = findViewById(R.id.btnNotificationPermission);
-        View btnTestTmapHud = findViewById(R.id.btnTestTmapHud);
-
-        boolean isHudEnabled = prefs.getBoolean("tmap_hud_enabled", true);
-        if (switchTmapHud != null) {
-            switchTmapHud.setChecked(isHudEnabled);
-            updateTmapHudUI(isHudEnabled, tvTmapHudDescription);
-            switchTmapHud.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                prefs.edit().putBoolean("tmap_hud_enabled", isChecked).apply();
-                updateTmapHudUI(isChecked, tvTmapHudDescription);
-                Intent intent = new Intent("com.example.carhome.UPDATE_SETTINGS");
-                intent.putExtra("key", "tmap_hud_enabled");
-                sendBroadcast(intent);
-                Toast.makeText(this, isChecked ? "🛡️ 티맵 안심주행 HUD: [켜짐]" : "🛡️ 티맵 안심주행 HUD: [꺼짐]", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnNotificationPermission != null) {
-            btnNotificationPermission.setOnClickListener(v -> {
-                try {
-                    startActivity(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
-                    Toast.makeText(this, "CarHome을 찾아 [알림 접근 허용]을 켜주세요! 🔔", Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    Toast.makeText(this, "설정 창을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-
-        if (btnTestTmapHud != null) {
-            btnTestTmapHud.setOnClickListener(v -> {
-                Intent intent = new Intent("com.example.carhome.UPDATE_SETTINGS");
-                intent.putExtra("key", "tmap_hud_test");
-                sendBroadcast(intent);
-                Toast.makeText(this, "🎯 티맵 안심주행 HUD 테스트 팝업을 띄웠습니다!", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        // 2. 티맵 실행 화면 모드 (전체화면 vs 팝업창 모드 선택)
+        // 1-1. 티맵 실행 화면 모드 (전체화면 vs 팝업창 모드 선택)
         @SuppressLint("UseSwitchCompatOrMaterialCode")
         Switch switchTmapPopupMode = findViewById(R.id.switchTmapPopupMode);
         TextView tvTmapModeDescription = findViewById(R.id.tvTmapModeDescription);
@@ -113,6 +74,29 @@ public class SettingsActivity extends AppCompatActivity {
                 prefs.edit().putBoolean("tmap_popup_enabled", isChecked).apply();
                 updateTmapModeUI(isChecked, tvTmapModeDescription, layoutTmapPopupSliders);
                 Toast.makeText(this, isChecked ? "🚗 티맵 실행 모드: [팝업창(플로팅)]으로 설정됨" : "🚗 티맵 실행 모드: [전체화면(Full Screen)]으로 설정됨", Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        // 1-2. 티맵 터치 매크로 동작 (켜기 vs 끄기 선택)
+        @SuppressLint("UseSwitchCompatOrMaterialCode")
+        Switch switchTmapMacro = findViewById(R.id.switchTmapMacro);
+        TextView tvTmapMacroDescription = findViewById(R.id.tvTmapMacroDescription);
+        View layoutTmapMacroDetails = findViewById(R.id.layoutTmapMacroDetails);
+
+        boolean isMacroEnabled = prefs.getBoolean("tmap_macro_enabled", false);
+        if (switchTmapMacro != null) {
+            switchTmapMacro.setChecked(isMacroEnabled);
+            updateTmapMacroUI(isMacroEnabled, tvTmapMacroDescription, layoutTmapMacroDetails);
+
+            switchTmapMacro.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                prefs.edit().putBoolean("tmap_macro_enabled", isChecked).apply();
+                updateTmapMacroUI(isChecked, tvTmapMacroDescription, layoutTmapMacroDetails);
+                Toast.makeText(this, isChecked ? "🤖 티맵 터치 매크로: [켜짐]" : "🤖 티맵 터치 매크로: [꺼짐] (안심주행 다이렉트 직행)", Toast.LENGTH_SHORT).show();
+                if (isChecked) {
+                    showPreviewCircle(currentX, currentY);
+                } else {
+                    hidePreviewCircle();
+                }
             });
         }
 
@@ -160,16 +144,10 @@ public class SettingsActivity extends AppCompatActivity {
         setupStepButton(R.id.btnPopupYPlus1, R.id.seekPopupY, 1);
 
         setupSeekBar(R.id.seekAutoClose, R.id.tvAutoClose, "auto_close", prefs.getInt("auto_close", 5), " 초");
-        setupStepButton(R.id.btnAutoCloseMinus1, R.id.seekAutoClose, -1);
-        setupStepButton(R.id.btnAutoClosePlus1, R.id.seekAutoClose, 1);
 
         setupSeekBar(R.id.seekHandleClockSize, R.id.tvHandleClockSize, "handle_clock_size", prefs.getInt("handle_clock_size", 18), " sp");
-        setupStepButton(R.id.btnHandleClockSizeMinus1, R.id.seekHandleClockSize, -1);
-        setupStepButton(R.id.btnHandleClockSizePlus1, R.id.seekHandleClockSize, 1);
 
         setupSeekBar(R.id.seekPopupIconSize, R.id.tvPopupIconSize, "popup_icon_size", prefs.getInt("popup_icon_size", 80), " dp");
-        setupStepButton(R.id.btnPopupIconSizeMinus1, R.id.seekPopupIconSize, -1);
-        setupStepButton(R.id.btnPopupIconSizePlus1, R.id.seekPopupIconSize, 1);
 
         // 5. 비주얼 매크로 좌표 피커(조준경) 실행 버튼
         View btnVisualPicker = findViewById(R.id.btnOpenVisualPicker);
@@ -199,7 +177,27 @@ public class SettingsActivity extends AppCompatActivity {
             btnBatteryOpt.setOnClickListener(v -> requestBatteryOptimizationExemption());
         }
 
-        // 7. 설정 화면 내 즉시 테스트 클릭 버튼
+        // 7. 시스템 권한 버튼 바인딩 (다른 앱 위에 그리기 & 접근성)
+        View btnOverlayPermission = findViewById(R.id.btnOverlayPermission);
+        if (btnOverlayPermission != null) {
+            btnOverlayPermission.setOnClickListener(v -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                }
+            });
+        }
+
+        View btnAccessibilityPermission = findViewById(R.id.btnAccessibilityPermission);
+        if (btnAccessibilityPermission != null) {
+            btnAccessibilityPermission.setOnClickListener(v -> {
+                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                startActivity(intent);
+                Toast.makeText(this, "CarHome 매크로 접근성 서비스를 켜주세요! 🟢", Toast.LENGTH_LONG).show();
+            });
+        }
+
+        // 8. 설정 화면 내 즉시 테스트 클릭 버튼
         View btnTestClickInSettings = findViewById(R.id.btnTestClickInSettings);
         if (btnTestClickInSettings != null) {
             btnTestClickInSettings.setOnClickListener(v -> {
@@ -207,24 +205,14 @@ public class SettingsActivity extends AppCompatActivity {
                     MacroAccessibilityService.instance.performClick(currentX, currentY);
                     Toast.makeText(this, "좌표 (X: " + currentX + ", Y: " + currentY + ") 테스트 클릭 발사! 🎯", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "접근성 서비스가 꺼져 있습니다. 메인 화면 상단 🔴을 눌러 켜주세요!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "접근성 서비스가 꺼져 있습니다. 접근성 설정에서 켜주세요!", Toast.LENGTH_LONG).show();
                 }
             });
         }
 
-        // 설정 화면 열릴 때 빨간색 미리보기 조준원 초기 표시
-        showPreviewCircle(currentX, currentY);
-    }
-
-    private void updateTmapHudUI(boolean isEnabled, TextView tvDesc) {
-        if (tvDesc != null) {
-            if (isEnabled) {
-                tvDesc.setText("현재: 안심주행 시 플로팅 HUD 팝업 및 과속 경고 작동 중");
-                tvDesc.setTextColor(Color.parseColor("#3DDC84")); // 초록색
-            } else {
-                tvDesc.setText("현재: 안심주행 플로팅 HUD 팝업 꺼짐");
-                tvDesc.setTextColor(Color.parseColor("#FF5252")); // 빨간색
-            }
+        // 매크로가 켜져 있을 때만 빨간색 미리보기 조준원 표시
+        if (isMacroEnabled) {
+            showPreviewCircle(currentX, currentY);
         }
     }
 
@@ -243,7 +231,22 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    // 설정 화면 위에 실시간 빨간색 조준원 오버레이 띄우기 (독립 실행 보장)
+    private void updateTmapMacroUI(boolean isMacroEnabled, TextView tvDesc, View detailsLayout) {
+        if (tvDesc != null) {
+            if (isMacroEnabled) {
+                tvDesc.setText("현재: 터치 매크로 [켜짐] (지정 좌표 반복 클릭)");
+                tvDesc.setTextColor(Color.parseColor("#3DDC84")); // 초록색
+            } else {
+                tvDesc.setText("현재: 터치 매크로 [꺼짐] (안심주행 다이렉트 직행)");
+                tvDesc.setTextColor(Color.parseColor("#888899")); // 회색
+            }
+        }
+        if (detailsLayout != null) {
+            detailsLayout.setVisibility(isMacroEnabled ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    // 설정 화면 위에 실시간 빨간색 조준원 오버레이 띄우기
     private void showPreviewCircle(int x, int y) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             return;
@@ -285,6 +288,15 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
+    private void hidePreviewCircle() {
+        if (previewCircleView != null && windowManager != null) {
+            try {
+                windowManager.removeView(previewCircleView);
+                previewCircleView = null;
+            } catch (Exception ignored) {}
+        }
+    }
+
     // 슬라이더를 움직일 때 실시간으로 빨간 원의 위치를 화면 위에서 즉시 이동
     private void updatePreviewCircle(int x, int y) {
         currentX = x;
@@ -306,12 +318,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (previewCircleView != null && windowManager != null) {
-            try {
-                windowManager.removeView(previewCircleView);
-                previewCircleView = null;
-            } catch (Exception ignored) {}
-        }
+        hidePreviewCircle();
     }
 
     @SuppressLint("BatteryLife")

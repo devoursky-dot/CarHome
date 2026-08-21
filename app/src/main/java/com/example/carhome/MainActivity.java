@@ -116,10 +116,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         View btnSettings = findViewById(R.id.btnSettings);
 
         if (btnNavi != null) {
-            btnNavi.setOnClickListener(v -> {
-                launchApp("com.skt.tmap.ku");
-                executeTmapMacro();
-            });
+            btnNavi.setOnClickListener(v -> launchApp("com.skt.tmap.ku"));
         }
 
         if (btnSystemSettings != null) {
@@ -429,43 +426,68 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     // 다른 앱 실행 공통 메서드
     public void launchApp(String packageName) {
+        if ("com.skt.tmap.ku".equals(packageName)) {
+            launchTmapSafeDriving();
+            return;
+        }
+
         Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-            // 실행한 앱이 티맵일 경우 팝업창 모드 확인 및 매크로 발동
-            if ("com.skt.tmap.ku".equals(packageName)) {
-                SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-                boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
-
-                if (popupEnabled) {
-
-                    int left = prefs.getInt("tmap_popup_x", 1050);
-                    int top = prefs.getInt("tmap_popup_y", 50);
-                    int width = prefs.getInt("tmap_popup_w", 840);
-                    int height = prefs.getInt("tmap_popup_h", 1100);
-
-                    Rect bounds = new Rect(left, top, left + width, top + height);
-
-                    ActivityOptions options = ActivityOptions.makeBasic();
-                    options.setLaunchBounds(bounds);
-
-                    try {
-                        Method method = ActivityOptions.class.getMethod("setLaunchWindowingMode", int.class);
-                        method.invoke(options, 5); // WINDOWING_MODE_FREEFORM = 5
-                    } catch (Exception ignored) {}
-
-                    startActivity(intent, options.toBundle());
-                } else {
-                    startActivity(intent);
-                }
-
-                executeTmapMacro();
-            } else {
-                startActivity(intent);
-            }
+            startActivity(intent);
         } else {
             Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 티맵 광고를 100% 건너뛰고 안심주행 화면으로 즉시 직행하는 다이렉트 런처
+    private void launchTmapSafeDriving() {
+        try {
+            Intent directIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("tmap://safe"));
+            directIntent.setPackage("com.skt.tmap.ku");
+            directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
+            SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
+            boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
+
+            if (popupEnabled) {
+                int left = prefs.getInt("tmap_popup_x", 1050);
+                int top = prefs.getInt("tmap_popup_y", 50);
+                int width = prefs.getInt("tmap_popup_w", 840);
+                int height = prefs.getInt("tmap_popup_h", 1100);
+
+                Rect bounds = new Rect(left, top, left + width, top + height);
+                ActivityOptions options = ActivityOptions.makeBasic();
+                options.setLaunchBounds(bounds);
+
+                try {
+                    Method method = ActivityOptions.class.getMethod("setLaunchWindowingMode", int.class);
+                    method.invoke(options, 5); // WINDOWING_MODE_FREEFORM = 5
+                } catch (Exception ignored) {}
+
+                startActivity(directIntent, options.toBundle());
+            } else {
+                startActivity(directIntent);
+            }
+            Toast.makeText(this, "🚗 티맵 안심주행으로 바로 실행합니다", Toast.LENGTH_SHORT).show();
+
+            boolean isMacroEnabled = prefs.getBoolean("tmap_macro_enabled", false);
+            if (isMacroEnabled) {
+                executeTmapMacro();
+            }
+        } catch (Exception e) {
+            // 안심주행 스킴 실패 시 기본 패키지 인텐트로 폴백
+            try {
+                Intent fallback = getPackageManager().getLaunchIntentForPackage("com.skt.tmap.ku");
+                if (fallback != null) {
+                    fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(fallback);
+                } else {
+                    Toast.makeText(this, "티맵이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception ex) {
+                Toast.makeText(this, "티맵 실행 실패", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

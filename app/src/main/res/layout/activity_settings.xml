@@ -3,29 +3,46 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212"
-    android:padding="24dp">
+    android:background="#121214"
+    android:padding="20dp">
 
+    <!-- 상단 헤더 바 -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp">
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CarHome 환경설정"
-            android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:layout_centerInParent="true" />
+            android:orientation="vertical"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true">
 
-        <!-- 설정 창 닫기 버튼 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚙️ CarHome 환경설정"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="차량용 대시보드, 티맵 연동 및 스마트 전원 자동화 관리"
+                android:textColor="#888899"
+                android:textSize="13sp"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- 설정 닫기 버튼 -->
         <ImageView
             android:id="@+id/btnCloseSettings"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
             android:background="@drawable/bg_round_btn"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
             android:scaleType="centerInside"
@@ -33,7 +50,7 @@
             android:focusable="true" />
     </RelativeLayout>
 
-    <!-- 설정 항목 리스트 -->
+    <!-- 메인 설정 스크롤 뷰 -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -44,51 +61,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- [특급 기능] 비주얼 매크로 좌표 피커 실행 대형 버튼 -->
-            <LinearLayout
-                android:id="@+id/btnOpenVisualPicker"
-                android:layout_width="match_parent"
-                android:layout_height="58dp"
-                android:background="@drawable/bg_dock_btn"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="10dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🎯  화면에서 티맵 버튼 위치 직접 찍기 (조준경 피커)"
-                    android:textColor="#3DDC84"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- [안정성] 배터리 최적화 제외 설정 버튼 -->
-            <LinearLayout
-                android:id="@+id/btnBatteryOptimization"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:background="@drawable/bg_dock_btn"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="16dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔋  배터리 최적화 제외 (상시 실행/꺼짐 방지)"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
             <!-- ============================================================ -->
-            <!-- 🛡️ [스마트] 티맵 안심주행 전용 플로팅 HUD & 과속 경고등 -->
+            <!-- 🚗 [섹션 1] 티맵(TMAP) 실행 모드 & 터치 매크로 설정 카드 -->
             <!-- ============================================================ -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -96,11 +70,23 @@
                 android:orientation="vertical"
                 android:background="@drawable/bg_card_dark"
                 android:padding="16dp"
-                android:layout_marginBottom="20dp">
+                android:layout_marginBottom="16dp">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🚗  티맵(TMAP) 연동 및 화면 설정"
+                    android:textColor="#64B5F6"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- 1-1. 티맵 화면 모드 (팝업창 vs 전체화면) 토글 -->
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_dock_btn"
+                    android:padding="12dp">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -112,23 +98,23 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🛡️  티맵 안심주행 플로팅 HUD &amp; 과속 경고"
+                            android:text="티맵 실행 창 모드 (팝업창 / 전체화면)"
                             android:textColor="#FFFFFF"
-                            android:textSize="18sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
 
                         <TextView
-                            android:id="@+id/tvTmapHudDescription"
+                            android:id="@+id/tvTmapModeDescription"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="현재: 안심주행 시 플로팅 HUD 팝업 및 과속 경고 작동 중"
+                            android:text="현재: 팝업창(플로팅) 모드로 실행 중"
                             android:textColor="#3DDC84"
-                            android:textSize="14sp"
-                            android:layout_marginTop="4dp" />
+                            android:textSize="13sp"
+                            android:layout_marginTop="2dp" />
                     </LinearLayout>
 
                     <Switch
-                        android:id="@+id/switchTmapHud"
+                        android:id="@+id/switchTmapPopupMode"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
@@ -136,14 +122,982 @@
                         android:checked="true" />
                 </RelativeLayout>
 
+                <!-- 팝업창 상세 크기/위치 조절 영역 (전체화면일 때는 숨김) -->
+                <LinearLayout
+                    android:id="@+id/layoutTmapPopupSliders"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp">
+
+                    <!-- 티맵 팝업창 X 위치 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="팝업 가로(X) 위치:"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapPopupX"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupXMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapPopupX"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="2500" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupXPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 티맵 팝업창 Y 위치 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="팝업 세로(Y) 위치:"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapPopupY"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupYMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapPopupY"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="2500" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupYPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 티맵 팝업창 가로폭(Width) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="팝업 가로폭(W):"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapPopupW"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupWMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapPopupW"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="2500"
+                            android:min="100" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupWPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 티맵 팝업창 세로높이(Height) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="팝업 세로높이(H):"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapPopupH"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupHMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapPopupH"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="2500"
+                            android:min="100" />
+
+                        <TextView
+                            android:id="@+id/btnTmapPopupHPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#2C2C32"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- 1-2. 티맵 터치 매크로 동작 켜기/끄기 스위치 -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_dock_btn"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🤖  티맵 실행 시 터치 매크로 동작"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvTmapMacroDescription"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="현재: 터치 매크로 [꺼짐] (안심주행 다이렉트 직행)"
+                            android:textColor="#888899"
+                            android:textSize="13sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <Switch
+                        android:id="@+id/switchTmapMacro"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:checked="false" />
+                </RelativeLayout>
+
+                <!-- 터치 매크로 세부 설정 영역 (매크로 꺼짐 시 숨김) -->
+                <LinearLayout
+                    android:id="@+id/layoutTmapMacroDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone">
+
+                    <!-- 조준경 피커 실행 버튼 -->
+                    <LinearLayout
+                        android:id="@+id/btnOpenVisualPicker"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/bg_dock_btn"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:layout_marginBottom="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🎯  화면에서 티맵 버튼 위치 직접 찍기 (조준경 피커)"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- 매크로 X 좌표 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="클릭 가로(X) 좌표:"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapX"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapXMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapX"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="2500" />
+
+                        <TextView
+                            android:id="@+id/btnTmapXPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 매크로 Y 좌표 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="클릭 세로(Y) 좌표:"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapY"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapYMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapY"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="2500" />
+
+                        <TextView
+                            android:id="@+id/btnTmapYPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 매크로 반복 횟수 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="반복 클릭 횟수:"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapMacroCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapMacroCountMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapMacroCount"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="20"
+                            android:min="0" />
+
+                        <TextView
+                            android:id="@+id/btnTmapMacroCountPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 매크로 클릭 간격 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="140dp"
+                            android:layout_height="wrap_content"
+                            android:text="클릭 주기(간격):"
+                            android:textColor="#DDDDDD"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvTmapMacroInterval"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapMacroIntervalMinus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="-1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                        <SeekBar
+                            android:id="@+id/seekTmapMacroInterval"
+                            android:layout_width="180dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_marginEnd="6dp"
+                            android:max="10"
+                            android:min="1" />
+
+                        <TextView
+                            android:id="@+id/btnTmapMacroIntervalPlus1"
+                            android:layout_width="44dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_dock_btn"
+                            android:text="+1"
+                            android:textColor="#3DDC84"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:clickable="true"
+                            android:focusable="true" />
+                    </LinearLayout>
+
+                    <!-- 테스트 클릭 발사 버튼 -->
+                    <LinearLayout
+                        android:id="@+id/btnTestClickInSettings"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_dock_btn"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🎯  조준 좌표 (X, Y) 테스트 클릭 발사"
+                            android:textColor="#64B5F6"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- ============================================================ -->
+            <!-- ⚡ [섹션 2] 전원 & 스마트 자동화 설정 카드 -->
+            <!-- ============================================================ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_dark"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚡  전원 &amp; 스마트 자동화 (2중 안전망)"
+                    android:textColor="#FFD54F"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- 시동 ON 안내 -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="14dp">
+                    android:background="@drawable/bg_dock_btn"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp">
 
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔌  시동 ON (전원 연결): 화면 켜기 + 티맵 자동 실행\n    (3초 전원 튐 무시 안전망 작동 중)"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:lineSpacingExtra="3dp" />
+                </LinearLayout>
+
+                <!-- 시동 OFF 안내 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/bg_dock_btn"
+                    android:padding="12dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💤  시동 OFF (전원 차단): 3초 지속 시 10초 카운트다운\n    ➔ 램 청소 + 최근 앱 모두 닫기 + 화면 잠금(절전)"
+                        android:textColor="#FFFFFF"
+                        android:textSize="13sp"
+                        android:lineSpacingExtra="3dp" />
+                </LinearLayout>
+
+                <!-- 배터리 최적화 제외 설정 버튼 -->
+                <LinearLayout
+                    android:id="@+id/btnBatteryOptimization"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/bg_dock_btn"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔋  배터리 최적화 제외 설정 (백그라운드 유지)"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ============================================================ -->
+            <!-- 📱 [섹션 3] 플로팅 위젯 & 대시보드 커스텀 카드 -->
+            <!-- ============================================================ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_dark"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📱  플로팅 위젯 및 대시보드 커스텀"
+                    android:textColor="#B39DDB"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="14dp" />
+
+                <!-- 1. 플로팅 핸들바(시계) Y 위치 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="140dp"
+                        android:layout_height="wrap_content"
+                        android:text="시계 위젯 Y 위치:"
+                        android:textColor="#DDDDDD"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvFloatingY"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/btnFloatingYMinus1"
+                        android:layout_width="44dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_dock_btn"
+                        android:text="-1"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <SeekBar
+                        android:id="@+id/seekFloatingY"
+                        android:layout_width="180dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:max="1200" />
+
+                    <TextView
+                        android:id="@+id/btnFloatingYPlus1"
+                        android:layout_width="44dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_dock_btn"
+                        android:text="+1"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <!-- 2. 플로팅 시계 글자 크기 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="140dp"
+                        android:layout_height="wrap_content"
+                        android:text="시계 글자 크기:"
+                        android:textColor="#DDDDDD"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvHandleClockSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <SeekBar
+                        android:id="@+id/seekHandleClockSize"
+                        android:layout_width="280dp"
+                        android:layout_height="wrap_content"
+                        android:max="40"
+                        android:min="12" />
+                </LinearLayout>
+
+                <!-- 3. 플로팅 팝업 메뉴 Y 위치 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="140dp"
+                        android:layout_height="wrap_content"
+                        android:text="팝업 메뉴 Y 위치:"
+                        android:textColor="#DDDDDD"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvPopupY"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/btnPopupYMinus1"
+                        android:layout_width="44dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_dock_btn"
+                        android:text="-1"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <SeekBar
+                        android:id="@+id/seekPopupY"
+                        android:layout_width="180dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:max="1200" />
+
+                    <TextView
+                        android:id="@+id/btnPopupYPlus1"
+                        android:layout_width="44dp"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_dock_btn"
+                        android:text="+1"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true" />
+                </LinearLayout>
+
+                <!-- 4. 팝업 아이콘 크기 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="140dp"
+                        android:layout_height="wrap_content"
+                        android:text="팝업 아이콘 크기:"
+                        android:textColor="#DDDDDD"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvPopupIconSize"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <SeekBar
+                        android:id="@+id/seekPopupIconSize"
+                        android:layout_width="280dp"
+                        android:layout_height="wrap_content"
+                        android:max="140"
+                        android:min="40" />
+                </LinearLayout>
+
+                <!-- 5. 팝업 메뉴 자동 닫힘 시간 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="140dp"
+                        android:layout_height="wrap_content"
+                        android:text="자동 닫힘 시간:"
+                        android:textColor="#DDDDDD"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/tvAutoClose"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#3DDC84"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
+
+                    <SeekBar
+                        android:id="@+id/seekAutoClose"
+                        android:layout_width="280dp"
+                        android:layout_height="wrap_content"
+                        android:max="30"
+                        android:min="3" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ============================================================ -->
+            <!-- 🔧 [섹션 4] 시스템 권한 바로가기 카드 -->
+            <!-- ============================================================ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card_dark"
+                android:padding="16dp"
+                android:layout_marginBottom="24dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔧  필수 시스템 권한 관리"
+                    android:textColor="#80DEEA"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <!-- 다른 앱 위에 표시 권한 -->
                     <LinearLayout
-                        android:id="@+id/btnNotificationPermission"
+                        android:id="@+id/btnOverlayPermission"
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
@@ -157,14 +1111,15 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🔔  알림 접근 권한 허용"
-                            android:textColor="#3DDC84"
-                            android:textSize="14sp"
+                            android:text="🪟  다른 앱 위에 그리기"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
                     </LinearLayout>
 
+                    <!-- 접근성 서비스 권한 -->
                     <LinearLayout
-                        android:id="@+id/btnTestTmapHud"
+                        android:id="@+id/btnAccessibilityPermission"
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
@@ -177,389 +1132,15 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🎯  HUD 화면 테스트 띄우기"
-                            android:textColor="#64B5F6"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- ============================================================ -->
-            <!-- 🚗 [선택] 티맵 실행 화면 모드 (전체화면 / 팝업창 모드 선택) -->
-            <!-- ============================================================ -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_card_dark"
-                android:padding="16dp"
-                android:layout_marginBottom="20dp">
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🚗  티맵 실행 화면 모드"
-                            android:textColor="#FFFFFF"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvTmapModeDescription"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="현재: 팝업창(플로팅) 모드로 실행 중"
+                            android:text="🤖  접근성 서비스 설정"
                             android:textColor="#3DDC84"
-                            android:textSize="14sp"
-                            android:textStyle="bold"
-                            android:layout_marginTop="2dp" />
-                    </LinearLayout>
-
-                    <Switch
-                        android:id="@+id/switchTmapPopupMode"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:checked="true" />
-                </RelativeLayout>
-
-                <!-- 팝업창 상세 크기/위치 조절 영역 (전체화면일 때는 숨김 처리) -->
-                <LinearLayout
-                    android:id="@+id/layoutTmapPopupSliders"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="14dp">
-
-                    <!-- 티맵 팝업창 X 위치 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업창 X 위치 (가로 시작점)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                        <TextView android:id="@+id/tvTmapPopupX" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-                    </LinearLayout>
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp"
-                        android:layout_marginBottom="12dp">
-                        <TextView android:id="@+id/btnTmapPopupXMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                        <SeekBar android:id="@+id/seekTmapPopupX" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" />
-                        <TextView android:id="@+id/btnTmapPopupXPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                    </LinearLayout>
-
-                    <!-- 티맵 팝업창 Y 위치 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업창 Y 위치 (세로 시작점)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                        <TextView android:id="@+id/tvTmapPopupY" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-                    </LinearLayout>
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp"
-                        android:layout_marginBottom="12dp">
-                        <TextView android:id="@+id/btnTmapPopupYMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                        <SeekBar android:id="@+id/seekTmapPopupY" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" />
-                        <TextView android:id="@+id/btnTmapPopupYPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                    </LinearLayout>
-
-                    <!-- 티맵 팝업창 너비 (Width) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업창 너비 (Width)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                        <TextView android:id="@+id/tvTmapPopupW" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-                    </LinearLayout>
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp"
-                        android:layout_marginBottom="12dp">
-                        <TextView android:id="@+id/btnTmapPopupWMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                        <SeekBar android:id="@+id/seekTmapPopupW" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" android:min="100" />
-                        <TextView android:id="@+id/btnTmapPopupWPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                    </LinearLayout>
-
-                    <!-- 티맵 팝업창 높이 (Height) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업창 높이 (Height)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                        <TextView android:id="@+id/tvTmapPopupH" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-                    </LinearLayout>
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp"
-                        android:layout_marginBottom="4dp">
-                        <TextView android:id="@+id/btnTmapPopupHMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                        <SeekBar android:id="@+id/seekTmapPopupH" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" android:min="100" />
-                        <TextView android:id="@+id/btnTmapPopupHPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ============================================================ -->
-            <!-- 🎯 티맵 매크로 설정 (좌표 / 클릭 횟수 / 클릭 간격) -->
-            <!-- ============================================================ -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🎯  티맵 매크로 자동 터치 설정"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- 티맵 터치 X 좌표 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="매크로 [X 좌표] (조절 시 빨간 원 실시간 표시)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvTmapX" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnTmapXMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekTmapX" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" />
-                <TextView android:id="@+id/btnTmapXPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 티맵 터치 Y 좌표 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="매크로 [Y 좌표] (조절 시 빨간 원 실시간 표시)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvTmapY" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnTmapYMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekTmapY" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="2500" />
-                <TextView android:id="@+id/btnTmapYPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 티맵 매크로 클릭 횟수 (0회: 매크로 끔) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="매크로 [클릭 횟수] (0회 설정 시 매크로 꺼짐)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvTmapMacroCount" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnTmapMacroCountMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekTmapMacroCount" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="20" android:min="0" />
-                <TextView android:id="@+id/btnTmapMacroCountPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 티맵 매크로 클릭 간격 (초) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="매크로 [클릭 간격] (초 단위)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvTmapMacroInterval" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnTmapMacroIntervalMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekTmapMacroInterval" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="10" android:min="1" />
-                <TextView android:id="@+id/btnTmapMacroIntervalPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 설정창 내 즉시 테스트 클릭 버튼 -->
-            <LinearLayout
-                android:id="@+id/btnTestClickInSettings"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_floating_handle"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="24dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🎯  현재 설정된 좌표 (X, Y) 테스트 클릭 발사"
-                    android:textColor="#3DDC84"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- ============================================================ -->
-            <!-- ⚙️ 플로팅 위젯 및 팝업 메뉴 설정 (1단위 조절 통일) -->
-            <!-- ============================================================ -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="⚙️  플로팅 위젯 및 팝업 메뉴 설정"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <!-- 플로팅 위젯 높이 (Y축) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="플로팅 위젯 높이 (Y축)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvFloatingY" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnFloatingYMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekFloatingY" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="500" />
-                <TextView android:id="@+id/btnFloatingYPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 팝업 메뉴 위치 (Y축) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업 메뉴 위치 (Y축)" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvPopupY" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnPopupYMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekPopupY" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="800" />
-                <TextView android:id="@+id/btnPopupYPlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 메뉴 자동 닫힘 대기 시간 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="메뉴 자동 닫힘 대기 시간" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvAutoClose" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnAutoCloseMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekAutoClose" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="30" />
-                <TextView android:id="@+id/btnAutoClosePlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 플로팅 위젯 시간 크기 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="플로팅 위젯 시간 크기" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvHandleClockSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="12dp">
-                <TextView android:id="@+id/btnHandleClockSizeMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekHandleClockSize" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="40" android:min="10" />
-                <TextView android:id="@+id/btnHandleClockSizePlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 팝업메뉴 아이콘 크기 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="팝업메뉴 아이콘 크기" android:textColor="#FFFFFF" android:textSize="15sp" />
-                <TextView android:id="@+id/tvPopupIconSize" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="16dp">
-                <TextView android:id="@+id/btnPopupIconSizeMinus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="-1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-                <SeekBar android:id="@+id/seekPopupIconSize" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:layout_marginEnd="6dp" android:max="150" android:min="50" />
-                <TextView android:id="@+id/btnPopupIconSizePlus1" android:layout_width="48dp" android:layout_height="40dp" android:background="@drawable/bg_dock_btn" android:text="+1" android:textColor="#3DDC84" android:textSize="15sp" android:textStyle="bold" android:gravity="center" android:clickable="true" android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 안내 문구 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="* 설정값은 조절 즉시 저장 및 실시간 적용됩니다."
-                android:textColor="#888888"
-                android:gravity="center"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="24dp" />
         </LinearLayout>
     </ScrollView>
+
 </LinearLayout>

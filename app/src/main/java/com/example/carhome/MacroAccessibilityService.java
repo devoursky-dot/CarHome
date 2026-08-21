@@ -87,10 +87,6 @@ public class MacroAccessibilityService extends AccessibilityService {
         showClickIndicator(x, y, 600);
     }
 
-    public void performHumanClick(float x, float y) {
-        performClick(x, y);
-    }
-
     // 티맵 실행 시 지정된 시간에 확실하게 닫기/확인 버튼을 누르는 자동 매크로 스케줄러
     public void scheduleTmapMacro(float x, float y) {
         scheduleTmapMacro(x, y, 6, 3);

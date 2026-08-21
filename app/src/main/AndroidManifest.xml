@@ -36,13 +36,14 @@
             </intent-filter>
         </activity>
 
-        <!-- 내장 브라우저 화면 등록 (회전 시 새로고침 방지 및 키보드 자판 활성화) -->
+        <!-- 내장 브라우저 화면 등록 (하드웨어 가속, 회전/전원/테마 변경 시 새로고침 방지 및 키보드 자판 활성화) -->
         <activity
             android:name=".BrowserActivity"
             android:exported="true"
             android:launchMode="singleTask"
+            android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize|stateHidden"
-            android:configChanges="orientation|screenSize|screenLayout|keyboard|keyboardHidden" />
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|keyboard|keyboardHidden|fontScale|density" />
 
         <!-- CarHome 전용 설정 화면 등록 -->
         <activity android:name=".SettingsActivity" android:exported="true" />

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -39,19 +41,21 @@ public class BrowserActivity extends AppCompatActivity {
     private FrameLayout fullscreenContainer;
     private TextView btnResolutionStatus;
     private String currentQualityLabel = "144P";
+    private String lastLoadedUrl = "https://m.youtube.com";
 
-    private final Handler adBlockHandler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private long lastAdToastTime = 0;
 
     // 안드로이드 - 웹뷰 간 실시간 광고 차단 통신 브릿지
     public class AdBlockBridge {
         @JavascriptInterface
         public void onAdSkipped(String reason) {
-            runOnUiThread(() -> {
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
                 long now = System.currentTimeMillis();
-                if (now - lastAdToastTime > 2500) {
+                if (now - lastAdToastTime > 3000) {
                     lastAdToastTime = now;
-                    Toast.makeText(BrowserActivity.this, "⚡ [광고 차단] 유튜브 광고 즉시 건너뛰기 완료!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(BrowserActivity.this, "⚡ [광고 차단] 유튜브 광고 건너뛰기 완료!", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -61,7 +65,8 @@ public class BrowserActivity extends AppCompatActivity {
     public class QualityBridge {
         @JavascriptInterface
         public void onQualityDetected(String quality) {
-            runOnUiThread(() -> {
+            mainHandler.post(() -> {
+                if (isFinishing() || isDestroyed()) return;
                 String label = "144P";
                 if (quality != null) {
                     String qLower = quality.toLowerCase();
@@ -80,26 +85,15 @@ public class BrowserActivity extends AppCompatActivity {
     private void updateResolutionBadge(String label) {
         currentQualityLabel = label;
         if (btnResolutionStatus != null) {
-            runOnUiThread(() -> {
-                btnResolutionStatus.setText("📺 " + label);
-                if ("144P".equals(label)) {
-                    btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 최저화질 초절약 모드)
-                } else {
-                    btnResolutionStatus.setTextColor(Color.parseColor("#64B5F6")); // 하늘색 (상위 화질 모드)
-                }
-            });
-        }
-    }
-
-    private final Runnable adBlockPeriodicRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (webView != null) {
-                injectAdBlocker(webView);
-                adBlockHandler.postDelayed(this, 1000); // 1초마다 지속 주입하여 영상 전환 시에도 100% 감시 유지
+            if (isFinishing() || isDestroyed()) return;
+            btnResolutionStatus.setText("📺 " + label);
+            if ("144P".equals(label)) {
+                btnResolutionStatus.setTextColor(Color.parseColor("#3DDC84")); // 녹색 (기본 최저화질 초절약 모드)
+            } else {
+                btnResolutionStatus.setTextColor(Color.parseColor("#64B5F6")); // 하늘색 (상위 화질 모드)
             }
         }
-    };
+    }
 
     @SuppressLint({"SetJavaScriptEnabled", "ClickableViewAccessibility"})
     @Override
@@ -135,9 +129,9 @@ public class BrowserActivity extends AppCompatActivity {
         TextView btnSpeed1_5x = findViewById(R.id.btnSpeed1_5x);
         TextView btnSpeed2x = findViewById(R.id.btnSpeed2x);
 
-        btnSpeed1x.setOnClickListener(v -> setVideoSpeed(1.0f));
-        btnSpeed1_5x.setOnClickListener(v -> setVideoSpeed(1.5f));
-        btnSpeed2x.setOnClickListener(v -> setVideoSpeed(2.0f));
+        if (btnSpeed1x != null) btnSpeed1x.setOnClickListener(v -> setVideoSpeed(1.0f));
+        if (btnSpeed1_5x != null) btnSpeed1_5x.setOnClickListener(v -> setVideoSpeed(1.5f));
+        if (btnSpeed2x != null) btnSpeed2x.setOnClickListener(v -> setVideoSpeed(2.0f));
 
         // 3. 툴바 시간 건너뛰기 버튼 연결 (<< 1분, < 10초, 10초 >, 1분 >>)
         TextView btnRewind = findViewById(R.id.btnRewind);
@@ -145,10 +139,10 @@ public class BrowserActivity extends AppCompatActivity {
         TextView btnRewind10 = findViewById(R.id.btnRewind10);
         TextView btnForward10 = findViewById(R.id.btnForward10);
 
-        btnRewind.setOnClickListener(v -> skipVideo(-60));
-        btnForward.setOnClickListener(v -> skipVideo(60));
-        btnRewind10.setOnClickListener(v -> skipVideo(-10));
-        btnForward10.setOnClickListener(v -> skipVideo(10));
+        if (btnRewind != null) btnRewind.setOnClickListener(v -> skipVideo(-60));
+        if (btnForward != null) btnForward.setOnClickListener(v -> skipVideo(60));
+        if (btnRewind10 != null) btnRewind10.setOnClickListener(v -> skipVideo(-10));
+        if (btnForward10 != null) btnForward10.setOnClickListener(v -> skipVideo(10));
 
         // 4. 툴바 해상도 조절 버튼 연결 (144P, 240P, 360P, 480P, 720P, 1080P)
         TextView btnRes144 = findViewById(R.id.btnRes144);
@@ -181,12 +175,33 @@ public class BrowserActivity extends AppCompatActivity {
             return false;
         });
 
+        initWebViewSettings();
+
+        String url = getIntent().getStringExtra("url");
+        if (url != null && !url.isEmpty()) {
+            lastLoadedUrl = url;
+            webView.loadUrl(url);
+        } else {
+            webView.loadUrl(lastLoadedUrl);
+        }
+
+        // 앱 실행 시 현재 화면 방향(가로/세로)에 맞춰 레이아웃 동적 초기화
+        updateMenuLayout(getResources().getConfiguration().orientation);
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private void initWebViewSettings() {
+        if (webView == null) return;
+
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false); // 동영상 자동 재생 허용
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
 
         // 자바스크립트 브릿지 등록 (광고 차단 및 해상도 감지용)
         webView.addJavascriptInterface(new AdBlockBridge(), "AndroidAdBlock");
@@ -207,12 +222,15 @@ public class BrowserActivity extends AppCompatActivity {
                 view.setKeepScreenOn(true);
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-                findViewById(R.id.browserRootLayout).setVisibility(View.GONE);
-                fullscreenContainer.setVisibility(View.VISIBLE);
-                fullscreenContainer.setKeepScreenOn(true);
-                fullscreenContainer.addView(view, new FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT));
+                View rootLayout = findViewById(R.id.browserRootLayout);
+                if (rootLayout != null) rootLayout.setVisibility(View.GONE);
+                if (fullscreenContainer != null) {
+                    fullscreenContainer.setVisibility(View.VISIBLE);
+                    fullscreenContainer.setKeepScreenOn(true);
+                    fullscreenContainer.addView(view, new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT));
+                }
 
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             }
@@ -221,20 +239,23 @@ public class BrowserActivity extends AppCompatActivity {
             public void onHideCustomView() {
                 if (customView == null) return;
 
-                fullscreenContainer.removeView(customView);
-                fullscreenContainer.setVisibility(View.GONE);
+                if (fullscreenContainer != null) {
+                    fullscreenContainer.removeView(customView);
+                    fullscreenContainer.setVisibility(View.GONE);
+                }
                 customView = null;
                 if (customViewCallback != null) {
                     customViewCallback.onCustomViewHidden();
                     customViewCallback = null;
                 }
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                findViewById(R.id.browserRootLayout).setVisibility(View.VISIBLE);
+                View rootLayout = findViewById(R.id.browserRootLayout);
+                if (rootLayout != null) rootLayout.setVisibility(View.VISIBLE);
             }
         });
 
         webView.setWebViewClient(new WebViewClient() {
-            // [강력한 광고 차단 엔진 1단계: 광고 서버 네트워크 패킷 원천 차단]
+            // [광고 차단 필터 목록]
             private final String[] AD_HOSTS = {
                     "doubleclick.net",
                     "adservice.google.com",
@@ -254,10 +275,12 @@ public class BrowserActivity extends AppCompatActivity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                for (String adHost : AD_HOSTS) {
-                    if (url.contains(adHost)) {
-                        return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream("".getBytes())); // 빈 데이터로 대체
+                if (request != null && request.getUrl() != null) {
+                    String url = request.getUrl().toString();
+                    for (String adHost : AD_HOSTS) {
+                        if (url.contains(adHost)) {
+                            return new WebResourceResponse("text/plain", "UTF-8", new ByteArrayInputStream("".getBytes())); // 빈 데이터로 대체
+                        }
                     }
                 }
                 return super.shouldInterceptRequest(view, request);
@@ -266,20 +289,30 @@ public class BrowserActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                if (url != null) lastLoadedUrl = url;
                 injectAdBlocker(view);
             }
+
+            // 웹뷰 렌더러 프로세스 비정상 종료(OOM, 비디오 디코더 충돌) 시 앱 크래시 방지 및 복구
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                if (isFinishing() || isDestroyed()) return true;
+                Toast.makeText(BrowserActivity.this, "웹 브라우저를 안전하게 복구합니다 🔄", Toast.LENGTH_SHORT).show();
+                if (view != null) {
+                    ViewGroup parent = (ViewGroup) view.getParent();
+                    if (parent != null) {
+                        parent.removeView(view);
+                    }
+                    view.destroy();
+                }
+                // 웹뷰 재생성 및 복구
+                mainHandler.postDelayed(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    recreate();
+                }, 500);
+                return true;
+            }
         });
-
-        String url = getIntent().getStringExtra("url");
-        if (url != null) {
-            webView.loadUrl(url);
-        }
-
-        // 앱 실행 시 현재 화면 방향(가로/세로)에 맞춰 레이아웃 동적 초기화
-        updateMenuLayout(getResources().getConfiguration().orientation);
-
-        // 광고 차단 상시 감시 스케줄러 시작
-        adBlockHandler.postDelayed(adBlockPeriodicRunnable, 1000);
     }
 
     @Override
@@ -287,24 +320,34 @@ public class BrowserActivity extends AppCompatActivity {
         super.onResume();
         // 브라우저 포커스 복귀 시 화면 꺼짐 방지 플래그 재확인
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (webView != null) {
+            webView.onResume();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (webView != null) {
+            webView.onPause();
+        }
     }
 
     // 뒤로가기 통합 처리 메서드 (태블릿 뒤로가기 버튼 지원)
     private void handleBackNavigation() {
         if (customView != null) {
             // 1. 전체화면 모드일 때 ➔ 전체화면 닫기
-            if (webView != null && webView.getWebChromeClient() != null) {
-                if (fullscreenContainer != null && customView != null) {
-                    fullscreenContainer.removeView(customView);
-                    fullscreenContainer.setVisibility(View.GONE);
-                }
-                customView = null;
-                if (customViewCallback != null) {
-                    customViewCallback.onCustomViewHidden();
-                    customViewCallback = null;
-                }
-                findViewById(R.id.browserRootLayout).setVisibility(View.VISIBLE);
+            if (fullscreenContainer != null && customView != null) {
+                fullscreenContainer.removeView(customView);
+                fullscreenContainer.setVisibility(View.GONE);
             }
+            customView = null;
+            if (customViewCallback != null) {
+                customViewCallback.onCustomViewHidden();
+                customViewCallback = null;
+            }
+            View rootLayout = findViewById(R.id.browserRootLayout);
+            if (rootLayout != null) rootLayout.setVisibility(View.VISIBLE);
         } else if (webView != null && webView.canGoBack()) {
             // 2. 브라우저 이전 페이지가 있을 때 ➔ 이전 페이지로 이동
             webView.goBack();
@@ -319,26 +362,31 @@ public class BrowserActivity extends AppCompatActivity {
         handleBackNavigation();
     }
 
-    // 유튜브 광고 차단 및 기본 144P 극단적 초저해상도 자동 고정 스크립트 주입
+    // 유튜브 광고 차단 및 기본 144P 극단적 초저해상도 자동 고정 스크립트 주입 (경량화 & 최적화)
     private void injectAdBlocker(WebView view) {
         if (view == null) return;
         String adBlockJs =
                 "(function() {" +
+                "  if (window.__carHomeAdBlockInitialized) return;" +
+                "  window.__carHomeAdBlockInitialized = true;" +
+                "  window.__lastQualityReported = '';" +
                 "  if (!window.__carHomeJsonHooked) {" +
                 "    window.__carHomeJsonHooked = true;" +
-                "    var origParse = JSON.parse;" +
-                "    JSON.parse = function() {" +
-                "      var r = origParse.apply(this, arguments);" +
-                "      if (r && typeof r === 'object') {" +
-                "        if (r.adPlacements) delete r.adPlacements;" +
-                "        if (r.adSlots) delete r.adSlots;" +
-                "        if (r.playerResponse) {" +
-                "          if (r.playerResponse.adPlacements) delete r.playerResponse.adPlacements;" +
-                "          if (r.playerResponse.adSlots) delete r.playerResponse.adSlots;" +
+                "    try {" +
+                "      var origParse = JSON.parse;" +
+                "      JSON.parse = function() {" +
+                "        var r = origParse.apply(this, arguments);" +
+                "        if (r && typeof r === 'object') {" +
+                "          if (r.adPlacements) delete r.adPlacements;" +
+                "          if (r.adSlots) delete r.adSlots;" +
+                "          if (r.playerResponse) {" +
+                "            if (r.playerResponse.adPlacements) delete r.playerResponse.adPlacements;" +
+                "            if (r.playerResponse.adSlots) delete r.playerResponse.adSlots;" +
+                "          }" +
                 "        }" +
-                "      }" +
-                "      return r;" +
-                "    };" +
+                "        return r;" +
+                "      };" +
+                "    } catch(e) {}" +
                 "  }" +
                 "  try {" +
                 "    var qObj = { data: 'tiny', expiration: Date.now() + 315360000000, creation: Date.now() };" +
@@ -373,67 +421,62 @@ public class BrowserActivity extends AppCompatActivity {
                 "  }" +
                 "  applyAdBlockCss();" +
                 "  function eliminateAdsAndEnforceQuality() {" +
-                "    applyAdBlockCss();" +
-                "    var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
-                "    var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads, [class*=\"ad-showing\"], .ytm-player-ad');" +
-                "    if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {" +
-                "      isAd = true;" +
-                "    }" +
-                "    var video = document.querySelector('video');" +
-                "    if (isAd && video) {" +
-                "      try { if (player && typeof player.skipAd === 'function') { player.skipAd(); } } catch(e) {}" +
-                "      video.muted = true;" +
-                "      video.playbackRate = 16.0;" +
-                "      if (video.duration && !isNaN(video.duration) && video.duration > 0 && isFinite(video.duration)) {" +
-                "        video.currentTime = Math.max(0, video.duration - 0.1);" +
+                "    try {" +
+                "      applyAdBlockCss();" +
+                "      var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
+                "      var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads, [class*=\"ad-showing\"], .ytm-player-ad');" +
+                "      if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {" +
+                "        isAd = true;" +
                 "      }" +
-                "      if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('video_ad_fast_forward'); }" +
-                "    }" +
-                "    var skipButtons = document.querySelectorAll(" +
-                "      '.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .videoAdUiSkipButton, ' +" +
-                "      '.ytp-ad-skip-button-slot button, button.ytp-ad-skip-button, button.ytp-ad-skip-button-modern, ' +" +
-                "      '.ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container, .ytp-ad-skip-slot button, ' +" +
-                "      'button[class*=\"skip-button\"], button[aria-label*=\"광고 건너뛰기\"], button[aria-label*=\"Skip ad\"], .ytp-skip-ad-button'" +
-                "    );" +
-                "    for (var i = 0; i < skipButtons.length; i++) {" +
-                "      try {" +
-                "        skipButtons[i].click();" +
-                "        if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('skip_button_clicked'); }" +
-                "      } catch(e) {}" +
-                "    }" +
-                "    var dismissBtns = document.querySelectorAll('yt-button-renderer#dismiss-button, button[aria-label=\"닫기\"], button[aria-label=\"Close\"], #dismiss-button');" +
-                "    for (var j = 0; j < dismissBtns.length; j++) {" +
-                "      try { if (dismissBtns[j].offsetParent !== null) dismissBtns[j].click(); } catch(e) {}" +
-                "    }" +
-                "    if (player) {" +
-                "      if (!window.__carHomeUserSelectedQuality) {" +
-                "        if (typeof player.setPlaybackQualityRange === 'function') {" +
-                "          player.setPlaybackQualityRange('tiny', 'tiny');" +
+                "      var video = document.querySelector('video');" +
+                "      if (isAd && video) {" +
+                "        try { if (player && typeof player.skipAd === 'function') { player.skipAd(); } } catch(e) {}" +
+                "        video.muted = true;" +
+                "        video.playbackRate = 16.0;" +
+                "        if (video.duration && !isNaN(video.duration) && video.duration > 0 && isFinite(video.duration)) {" +
+                "          video.currentTime = Math.max(0, video.duration - 0.1);" +
                 "        }" +
-                "        if (typeof player.setPlaybackQuality === 'function') {" +
-                "          player.setPlaybackQuality('tiny');" +
-                "        }" +
+                "        if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('video_ad_fast_forward'); }" +
                 "      }" +
-                "      if (typeof player.getPlaybackQuality === 'function') {" +
-                "        var q = player.getPlaybackQuality();" +
-                "        if (q && window.AndroidQuality) {" +
-                "          window.AndroidQuality.onQualityDetected(q);" +
+                "      var skipButtons = document.querySelectorAll('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .videoAdUiSkipButton, .ytp-ad-skip-button-slot button, button.ytp-ad-skip-button, button.ytp-ad-skip-button-modern, .ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container, .ytp-ad-skip-slot button, button[class*=\"skip-button\"], button[aria-label*=\"광고 건너뛰기\"], button[aria-label*=\"Skip ad\"], .ytp-skip-ad-button');" +
+                "      for (var i = 0; i < skipButtons.length; i++) {" +
+                "        try {" +
+                "          skipButtons[i].click();" +
+                "          if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('skip_button_clicked'); }" +
+                "        } catch(e) {}" +
+                "      }" +
+                "      var dismissBtns = document.querySelectorAll('yt-button-renderer#dismiss-button, button[aria-label=\"닫기\"], button[aria-label=\"Close\"], #dismiss-button');" +
+                "      for (var j = 0; j < dismissBtns.length; j++) {" +
+                "        try { if (dismissBtns[j].offsetParent !== null) dismissBtns[j].click(); } catch(e) {}" +
+                "      }" +
+                "      if (player) {" +
+                "        if (!window.__carHomeUserSelectedQuality) {" +
+                "          if (typeof player.setPlaybackQualityRange === 'function') {" +
+                "            player.setPlaybackQualityRange('tiny', 'tiny');" +
+                "          }" +
+                "          if (typeof player.setPlaybackQuality === 'function') {" +
+                "            player.setPlaybackQuality('tiny');" +
+                "          }" +
+                "        }" +
+                "        if (typeof player.getPlaybackQuality === 'function') {" +
+                "          var q = player.getPlaybackQuality();" +
+                "          if (q && q !== window.__lastQualityReported && window.AndroidQuality) {" +
+                "            window.__lastQualityReported = q;" +
+                "            window.AndroidQuality.onQualityDetected(q);" +
+                "          }" +
                 "        }" +
                 "      }" +
-                "    }" +
+                "    } catch(err) {}" +
                 "  }" +
                 "  eliminateAdsAndEnforceQuality();" +
                 "  if (!window.carHomeAdBlockTimer) {" +
-                "    window.carHomeAdBlockTimer = setInterval(eliminateAdsAndEnforceQuality, 200);" +
-                "  }" +
-                "  if (!window.carHomeAdBlockObs && window.MutationObserver && (document.documentElement || document.body)) {" +
-                "    window.carHomeAdBlockObs = new MutationObserver(function() { eliminateAdsAndEnforceQuality(); });" +
-                "    window.carHomeAdBlockObs.observe(document.documentElement || document.body, { childList: true, subtree: true });" +
+                "    window.carHomeAdBlockTimer = setInterval(eliminateAdsAndEnforceQuality, 1000);" +
                 "  }" +
                 "  if (!window.__carHomeQualityEventAttached) {" +
                 "    window.__carHomeQualityEventAttached = true;" +
                 "    document.addEventListener('yt-navigate-finish', function() {" +
                 "      window.__carHomeUserSelectedQuality = false;" +
+                "      window.__lastQualityReported = '';" +
                 "      eliminateAdsAndEnforceQuality();" +
                 "    });" +
                 "  }" +
@@ -457,7 +500,7 @@ public class BrowserActivity extends AppCompatActivity {
         LinearLayout menuGroup3 = findViewById(R.id.menuGroup3);
         LinearLayout browserRootLayout = findViewById(R.id.browserRootLayout);
 
-        if (menuLayout == null || menuGroup1 == null || menuGroup2 == null || menuGroup3 == null || browserRootLayout == null) {
+        if (menuLayout == null || menuGroup1 == null || menuGroup2 == null || menuGroup3 == null || browserRootLayout == null || webView == null) {
             return;
         }
 
@@ -521,7 +564,8 @@ public class BrowserActivity extends AppCompatActivity {
     // 비디오 배속을 변경하는 공통 메서드
     private void setVideoSpeed(float speed) {
         if (webView != null) {
-            webView.evaluateJavascript("var videos = document.getElementsByTagName('video'); if(videos.length > 0) videos[0].playbackRate = " + speed + ";", null);
+            String js = "try { var videos = document.getElementsByTagName('video'); if(videos && videos.length > 0) { videos[0].playbackRate = " + speed + "; } } catch(e) {}";
+            webView.evaluateJavascript(js, null);
             Toast.makeText(this, speed + "배속 적용", Toast.LENGTH_SHORT).show();
         }
     }
@@ -529,7 +573,8 @@ public class BrowserActivity extends AppCompatActivity {
     // 자바스크립트를 이용해 유튜브 재생 시간을 앞/뒤로 넘기는 기능
     private void skipVideo(int seconds) {
         if (webView != null) {
-            webView.evaluateJavascript("var v = document.getElementsByTagName('video')[0]; if(v) v.currentTime += " + seconds + ";", null);
+            String js = "try { var v = document.getElementsByTagName('video')[0]; if(v) { v.currentTime += " + seconds + "; } } catch(e) {}";
+            webView.evaluateJavascript(js, null);
             String msg = Math.abs(seconds) >= 60 ? (Math.abs(seconds) / 60) + "분" : Math.abs(seconds) + "초";
             Toast.makeText(this, (seconds > 0 ? "+" + msg + " 이동" : "-" + msg + " 이동"), Toast.LENGTH_SHORT).show();
         }
@@ -539,19 +584,22 @@ public class BrowserActivity extends AppCompatActivity {
     private void setVideoQuality(String qualityLevel, String label) {
         if (webView != null) {
             String js = "(function() {" +
-                    "  window.__carHomeUserSelectedQuality = true;" +
-                    "  var p = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
-                    "  if (p) {" +
-                    "    if (typeof p.setPlaybackQualityRange === 'function') {" +
-                    "      p.setPlaybackQualityRange('" + qualityLevel + "', '" + qualityLevel + "');" +
+                    "  try {" +
+                    "    window.__carHomeUserSelectedQuality = true;" +
+                    "    var p = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
+                    "    if (p) {" +
+                    "      if (typeof p.setPlaybackQualityRange === 'function') {" +
+                    "        p.setPlaybackQualityRange('" + qualityLevel + "', '" + qualityLevel + "');" +
+                    "      }" +
+                    "      if (typeof p.setPlaybackQuality === 'function') {" +
+                    "        p.setPlaybackQuality('" + qualityLevel + "');" +
+                    "      }" +
+                    "      window.__lastQualityReported = '" + qualityLevel + "';" +
+                    "      if (window.AndroidQuality) {" +
+                    "        window.AndroidQuality.onQualityDetected('" + qualityLevel + "');" +
+                    "      }" +
                     "    }" +
-                    "    if (typeof p.setPlaybackQuality === 'function') {" +
-                    "      p.setPlaybackQuality('" + qualityLevel + "');" +
-                    "    }" +
-                    "    if (window.AndroidQuality) {" +
-                    "      window.AndroidQuality.onQualityDetected('" + qualityLevel + "');" +
-                    "    }" +
-                    "  }" +
+                    "  } catch(e) {}" +
                     "})();";
             webView.evaluateJavascript(js, null);
             updateResolutionBadge(label);
@@ -565,19 +613,26 @@ public class BrowserActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         String url = intent.getStringExtra("url");
-        if (url != null && webView != null) {
+        if (url != null && !url.isEmpty() && webView != null) {
+            lastLoadedUrl = url;
             webView.loadUrl(url); // 기존 창(첫 번째 탭)에서 새로운 URL을 로드
         }
     }
 
     @Override
     protected void onDestroy() {
-        adBlockHandler.removeCallbacksAndMessages(null);
+        mainHandler.removeCallbacksAndMessages(null);
         if (webView != null) {
-            webView.clearHistory(); // 뒤로가기 기록 삭제
-            webView.clearCache(true); // 임시 파일 삭제
-            webView.destroy(); // 브라우저 엔진 완전 종료
-            webView = null; // 메모리에서 즉시 해제
+            try {
+                ViewGroup parent = (ViewGroup) webView.getParent();
+                if (parent != null) {
+                    parent.removeView(webView);
+                }
+                webView.stopLoading();
+                webView.clearHistory();
+                webView.destroy();
+            } catch (Exception ignored) {}
+            webView = null;
         }
         super.onDestroy();
     }
