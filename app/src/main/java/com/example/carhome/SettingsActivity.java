@@ -50,11 +50,6 @@ public class SettingsActivity extends AppCompatActivity {
 
         windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
-        ImageView btnClose = findViewById(R.id.btnCloseSettings);
-        if (btnClose != null) {
-            btnClose.setOnClickListener(v -> finish());
-        }
-
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
         currentX = prefs.getInt("tmap_x", 1130);
         currentY = prefs.getInt("tmap_y", 70);

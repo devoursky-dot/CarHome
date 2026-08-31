@@ -5,7 +5,8 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="12dp"
-    android:background="?android:attr/selectableItemBackground"
+    android:layout_margin="4dp"
+    android:background="@drawable/bg_dock_btn"
     android:clickable="true"
     android:focusable="true">
 

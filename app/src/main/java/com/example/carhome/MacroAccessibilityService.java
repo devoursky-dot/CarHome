@@ -53,17 +53,24 @@ public class MacroAccessibilityService extends AccessibilityService {
         return super.onUnbind(intent);
     }
 
+    @Override
+    public void onDestroy() {
+        instance = null;
+        if (macroHandler != null) {
+            macroHandler.removeCallbacksAndMessages(null);
+        }
+        super.onDestroy();
+    }
+
     // 안드로이드 표준 제스처 클릭 (Path 길이 오류 완벽 수정: moveTo + lineTo)
     public void performClick(float x, float y) {
         if (x < 0 || y < 0) return;
 
         Path path = new Path();
         path.moveTo(x, y);
-        // 안드로이드 제스처 시스템은 길이 0인 패스를 무시하므로, lineTo(x, y + 1)을 추가하여 완벽한 클릭 제스처 생성
         path.lineTo(x, y + 1);
 
         GestureDescription.Builder builder = new GestureDescription.Builder();
-        // 50ms 탭 제스처
         builder.addStroke(new GestureDescription.StrokeDescription(path, 0, 50));
         GestureDescription gesture = builder.build();
 
@@ -134,12 +141,12 @@ public class MacroAccessibilityService extends AccessibilityService {
                 }
 
                 View indicator = new View(this);
-                int size = 90; // 표적 원 크기
+                int size = 90;
 
                 GradientDrawable shape = new GradientDrawable();
                 shape.setShape(GradientDrawable.OVAL);
-                shape.setColor(Color.parseColor("#70FF0000")); // 반투명 빨간색
-                shape.setStroke(4, Color.parseColor("#FFFF0000")); // 진한 빨간색 테두리
+                shape.setColor(Color.parseColor("#70FF0000"));
+                shape.setStroke(4, Color.parseColor("#FFFF0000"));
                 indicator.setBackground(shape);
 
                 WindowManager.LayoutParams params = new WindowManager.LayoutParams(
@@ -185,7 +192,7 @@ public class MacroAccessibilityService extends AccessibilityService {
         closeAllRecentAppsAndLock(false);
     }
 
-    // 최근 실행 앱 모두 닫기 및 화면 잠금(절전 모드) 연계 매크로
+    // 최근 실행 앱 모두 닫기 및 화면 잠금(절전 모드) 연계 매크로 (AccessibilityNodeInfo 메모리 누수 방지 리사이클 적용)
     public void closeAllRecentAppsAndLock(boolean andLockScreen) {
         performGlobalAction(GLOBAL_ACTION_RECENTS);
 
@@ -204,16 +211,17 @@ public class MacroAccessibilityService extends AccessibilityService {
                             if (node.isClickable()) {
                                 node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
                                 clicked = true;
-                                break;
                             } else if (node.getParent() != null && node.getParent().isClickable()) {
                                 node.getParent().performAction(AccessibilityNodeInfo.ACTION_CLICK);
                                 clicked = true;
-                                break;
                             }
+                            node.recycle();
+                            if (clicked) break;
                         }
                     }
                     if (clicked) break;
                 }
+                rootNode.recycle();
             }
 
             if (clicked) {
@@ -222,12 +230,19 @@ public class MacroAccessibilityService extends AccessibilityService {
                 Toast.makeText(this, "모두 닫기 버튼을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
             }
 
-            // 앱 닫기 완료 후 화면 잠금(절전 모드)으로 즉시 전환
+            // 앱 닫기 완료 후 5초 대기 후 화면 잠금 (애니메이션 딜레이 방지 및 확실한 잠금 보장)
             if (andLockScreen) {
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    Toast.makeText(this, "💤 절전 모드: 화면을 잠급니다.", Toast.LENGTH_SHORT).show();
-                    lockScreen();
-                }, 1200);
+                    android.os.BatteryManager bm = (android.os.BatteryManager) getSystemService(BATTERY_SERVICE);
+                    if (bm != null && bm.isCharging()) {
+                        Toast.makeText(this, "전원 복구됨: 화면 잠금을 취소합니다.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "💤 절전 모드: 화면을 잠급니다.", Toast.LENGTH_SHORT).show();
+                        lockScreen();
+                        // 1초 뒤 한번 더 잠금 (확인 사살)
+                        new Handler(Looper.getMainLooper()).postDelayed(this::lockScreen, 1000);
+                    }
+                }, 5000);
             }
         }, 3000);
     }

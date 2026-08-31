@@ -65,6 +65,33 @@ public class FloatingService extends Service {
     private Handler powerDisconnectDebounceHandler = new Handler(Looper.getMainLooper());
     private boolean isCountingDownToPowerOff = false;
 
+    // [수정 3] BrowserActivity가 포그라운드에 있는지 확인 (유튜브 시청 중 강제 종료 방지)
+    private boolean isBrowserInForeground() {
+        try {
+            ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            if (am != null) {
+                List<ActivityManager.RunningAppProcessInfo> processes = am.getRunningAppProcesses();
+                if (processes != null) {
+                    for (ActivityManager.RunningAppProcessInfo proc : processes) {
+                        if (proc.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                                && getPackageName().equals(proc.processName)) {
+                            // 자기 앱이 포그라운드 → BrowserActivity 또는 MainActivity
+                            // 추가로 최상위 Activity가 BrowserActivity인지 확인
+                            List<ActivityManager.RunningTaskInfo> tasks = am.getRunningTasks(1);
+                            if (tasks != null && !tasks.isEmpty()) {
+                                android.content.ComponentName topActivity = tasks.get(0).topActivity;
+                                if (topActivity != null && topActivity.getClassName().contains("BrowserActivity")) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     // 실제 하드웨어 배터리 충전 상태 교차 검증 (순간 전압 강하/배터리 완충 깜빡임 필터링)
     private boolean isCurrentlyCharging() {
         try {
@@ -147,46 +174,43 @@ public class FloatingService extends Service {
                 // 화면이 꺼져 있던 상태(새로 시동 건 상태)이거나,
                 // 직전에 전원이 끊겨서 실제로 10초 카운트다운이 돌고 있었을 때만 화면을 켜고 티맵 자동 실행
                 if (isScreenOff || wasCountingDown) {
-                    if (isScreenOff && pm != null) {
-                        @SuppressWarnings("deprecation")
-                        PowerManager.WakeLock wakeLock = pm.newWakeLock(
-                                PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                                "CarHome:PowerWakeLock"
-                        );
-                        wakeLock.acquire(3000);
+                    // [문제 B 수정] 브라우저(유튜브) 사용 중이면 티맵 강제 실행을 차단하여 시청 중단 방지
+                    if (isBrowserInForeground()) {
+                        Toast.makeText(context, "⚡ 전원 복구됨 (브라우저 사용 중이므로 티맵 자동 실행을 건너뜁니다)", Toast.LENGTH_SHORT).show();
+                    } else {
+                        if (isScreenOff && pm != null) {
+                            @SuppressWarnings("deprecation")
+                            PowerManager.WakeLock wakeLock = pm.newWakeLock(
+                                    PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                                    "CarHome:PowerWakeLock"
+                            );
+                            wakeLock.acquire(3000);
+                        }
+
+                        Intent mainIntent = new Intent(context, MainActivity.class);
+                        mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(mainIntent);
+
+                        autoLaunchHandler.removeCallbacksAndMessages(null);
+                        autoLaunchHandler.postDelayed(() -> {
+                            launchTmapSafeDriving();
+                        }, 2000);
                     }
-
-                    Intent mainIntent = new Intent(context, MainActivity.class);
-                    mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(mainIntent);
-
-                    autoLaunchHandler.removeCallbacksAndMessages(null);
-                    autoLaunchHandler.postDelayed(() -> {
-                        launchTmapSafeDriving();
-                    }, 2000);
                 }
                 // 만약 이미 화면이 켜져서 브라우저나 유튜브 등을 사용 중이던 상태에서 0.5초 잠깐 전원이 튄 것은
                 // 사용자를 절대 방해하지 않고 현재 보던 화면을 100% 그대로 유지합니다.
             } else if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
                 autoLaunchHandler.removeCallbacksAndMessages(null);
 
-                // [3초 전원 차단 안전망 디바운스]
-                // 0.5초 미세 순단, 배터리 완충 깜빡임, 시동 순간 전압 강하는 3초 이내에 복구되므로 조용히 무시.
-                // 3초 이상 전원 차단이 지속될 때만 "진짜 시동 OFF"로 판단하여 카운트다운을 시작합니다.
+                // 5초 대기 후 전원이 계속 들어오지 않으면 바로 모든 앱 닫기 실행
                 powerDisconnectDebounceHandler.removeCallbacksAndMessages(null);
                 powerDisconnectDebounceHandler.postDelayed(() -> {
-                    // 3초 후 실제 하드웨어 충전 상태 교차 검증
                     if (!isCurrentlyCharging()) {
-                        isCountingDownToPowerOff = true;
-                        Toast.makeText(context, "전원 차단 감지: 10초 뒤 모든 앱 정리 및 화면 잠금(절전)을 실행합니다 🧹💤", Toast.LENGTH_LONG).show();
-                        powerOffHandler.removeCallbacksAndMessages(null);
-                        powerOffHandler.postDelayed(() -> {
-                            isCountingDownToPowerOff = false;
-                            cleanMemory(); // 1. 백그라운드 프로세스 & 캐시 일괄 청소
-                            executeCloseAllAppsAndLockMacro(); // 2. 최근 앱 모두 닫기 & 화면 잠금(절전 모드) 전환
-                        }, 10000);
+                        Toast.makeText(context, "전원 차단 5초 경과: 모든 앱 정리 후 5초 뒤 화면을 잠급니다 🧹💤", Toast.LENGTH_LONG).show();
+                        cleanMemory();
+                        executeCloseAllAppsAndLockMacro();
                     }
-                }, 3000);
+                }, 5000);
             }
         }
     };
@@ -408,6 +432,7 @@ public class FloatingService extends Service {
         am.getMemoryInfo(beforeMem);
 
         // [1. 절대 강제 종료하면 안 되는 필수 보호 화이트리스트]
+        // [수정 4] WebView 렌더러 프로세스 보호 추가 (유튜브 시청 중 크래시 방지)
         Set<String> protectedWhitelist = new HashSet<>(Arrays.asList(
                 getPackageName(),
                 "com.skt.tmap.ku",
@@ -422,7 +447,9 @@ public class FloatingService extends Service {
                 "com.android.bluetooth",
                 "com.sec.location.nsflp2",
                 "com.google.android.gms",
-                "com.google.android.gsf"
+                "com.google.android.gsf",
+                "com.google.android.webview",
+                "com.android.webview"
         ));
 
         // [2. 메모리를 많이 먹는 불필요 백그라운드 앱 우선 타겟팅]

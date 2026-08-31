@@ -18,9 +18,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import java.lang.reflect.Method;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
@@ -48,22 +45,23 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements LocationListener {
+public class MainActivity extends AppCompatActivity {
 
-    private TextView tvMemory, tvBattery, tvAccessibility, tvGpsStatus;
-    private TextView tvGpsSpeed, tvGpsHeading;
+    private TextView tvMemory, tvBattery, tvAccessibility;
 
     private BroadcastReceiver batteryReceiver;
     private Handler statusHandler = new Handler(Looper.getMainLooper());
     private Runnable statusRunnable;
-
-    private LocationManager locationManager;
-    private static final int PERMISSION_REQ_LOCATION = 1001;
+    private AlertDialog appDrawerDialog = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,13 +88,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             windowInsetsController.hide(WindowInsetsCompat.Type.statusBars());
         }
 
-        // 1. 상태바 및 대시보드 뷰 연결
+        // 1. 상태바 뷰 연결
         tvMemory = findViewById(R.id.tvMemory);
         tvBattery = findViewById(R.id.tvBattery);
         tvAccessibility = findViewById(R.id.tvAccessibility);
-        tvGpsStatus = findViewById(R.id.tvGpsStatus);
-        tvGpsSpeed = findViewById(R.id.tvGpsSpeed);
-        tvGpsHeading = findViewById(R.id.tvGpsHeading);
 
         setupStatusBar();
 
@@ -111,6 +106,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         // 2. 하단 4대 핵심 버튼 연결 (티맵, 태블릿 설정, 전체 앱, CarHome 설정)
         View btnNavi = findViewById(R.id.btnNavi);
+        ImageView imgNaviIcon = findViewById(R.id.imgNaviIcon);
+        if (imgNaviIcon != null) {
+            try {
+                Drawable tmapAppIcon = getPackageManager().getApplicationIcon("com.skt.tmap.ku");
+                imgNaviIcon.setImageDrawable(tmapAppIcon);
+            } catch (Exception ignored) {
+                imgNaviIcon.setImageResource(R.drawable.ic_btn_tmap);
+            }
+        }
+
         View btnSystemSettings = findViewById(R.id.btnSystemSettings);
         View btnAllApps = findViewById(R.id.btnAllApps);
         View btnSettings = findViewById(R.id.btnSettings);
@@ -137,122 +142,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             btnSettings.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
         }
 
-        // 3. 위치 관리자 초기화 및 권한 확인
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        checkLocationPermission();
-
-        // 4. 플로팅 오버레이 권한 확인 및 실행
+        // 3. 플로팅 오버레이 권한 확인 및 실행
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "'다른 앱 위에 표시' 권한을 켜주세요!", Toast.LENGTH_LONG).show();
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
             startActivity(intent);
-        }
-    }
-
-    private void checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    PERMISSION_REQ_LOCATION
-            );
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQ_LOCATION) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                registerLocationUpdates();
-            } else {
-                if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 권한 필요");
-            }
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private void registerLocationUpdates() {
-        if (locationManager == null) return;
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-
-        try {
-            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 0.5f, this);
-                if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 수신 중");
-            } else {
-                if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 꺼짐");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void unregisterLocationUpdates() {
-        if (locationManager != null) {
-            try {
-                locationManager.removeUpdates(this);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    public void onLocationChanged(@NonNull Location location) {
-        if (tvGpsStatus != null) tvGpsStatus.setText("📡 GPS 정상");
-
-        // 속도 계산 (m/s -> km/h)
-        float speedKmh = 0f;
-        if (location.hasSpeed()) {
-            speedKmh = location.getSpeed() * 3.6f;
-        }
-
-        int speedInt = Math.round(speedKmh);
-        if (tvGpsSpeed != null) {
-            tvGpsSpeed.setText(speedInt + " km/h");
-            // 80km/h 초과 시 시각적 경고 색상
-            if (speedInt >= 100) {
-                tvGpsSpeed.setTextColor(Color.parseColor("#FF5252"));
-            } else if (speedInt >= 80) {
-                tvGpsSpeed.setTextColor(Color.parseColor("#FFB300"));
-            } else {
-                tvGpsSpeed.setTextColor(Color.WHITE);
-            }
-        }
-
-        // 주행 방위 계산
-        if (tvGpsHeading != null) {
-            if (speedInt < 3) {
-                tvGpsHeading.setText("[ 🧭 정지 ]");
-            } else if (location.hasBearing()) {
-                String headingStr = getHeadingString(location.getBearing());
-                tvGpsHeading.setText("[ 🧭 " + headingStr + " ]");
-            }
-        }
-    }
-
-    private String getHeadingString(float bearing) {
-        String[] directions = {"북 (N)", "북동 (NE)", "동 (E)", "남동 (SE)", "남 (S)", "남서 (SW)", "서 (W)", "북서 (NW)"};
-        int index = Math.round(bearing / 45) % 8;
-        return directions[index < 0 ? index + 8 : index];
-    }
-
-    @Override
-    public void onProviderEnabled(@NonNull String provider) {
-        if (LocationManager.GPS_PROVIDER.equals(provider) && tvGpsStatus != null) {
-            tvGpsStatus.setText("📡 GPS 켜짐");
-        }
-    }
-
-    @Override
-    public void onProviderDisabled(@NonNull String provider) {
-        if (LocationManager.GPS_PROVIDER.equals(provider) && tvGpsStatus != null) {
-            tvGpsStatus.setText("📡 GPS 꺼짐");
         }
     }
 
@@ -278,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             @Override
             public void run() {
                 updateMemory();
-                statusHandler.postDelayed(this, 1000);
+                statusHandler.postDelayed(this, 2000); // 2초 주기 최적화
             }
         };
     }
@@ -287,14 +181,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     protected void onResume() {
         super.onResume();
         if (batteryReceiver != null) {
-            registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            try {
+                registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            } catch (Exception ignored) {}
         }
         if (statusRunnable != null) {
             statusHandler.post(statusRunnable);
         }
-
-        // GPS 수신 등록
-        registerLocationUpdates();
 
         // 플로팅 서비스 상시 유지 확인
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)) {
@@ -310,23 +203,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     protected void onPause() {
         super.onPause();
-        // 배터리 방전 방지를 위해 화면 벗어날 때 즉시 센서 및 GPS 해제
         if (batteryReceiver != null) {
             try { unregisterReceiver(batteryReceiver); } catch (Exception e) {}
         }
         if (statusHandler != null && statusRunnable != null) {
             statusHandler.removeCallbacks(statusRunnable);
         }
-        unregisterLocationUpdates();
     }
 
     private void updateMemory() {
         ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
-        activityManager.getMemoryInfo(memoryInfo);
-        long usedMem = memoryInfo.totalMem - memoryInfo.availMem;
-        int memPct = (int) ((usedMem / (double) memoryInfo.totalMem) * 100);
-        if (tvMemory != null) tvMemory.setText("RAM: " + memPct + "%");
+        if (activityManager != null) {
+            ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
+            activityManager.getMemoryInfo(memoryInfo);
+            long usedMem = memoryInfo.totalMem - memoryInfo.availMem;
+            int memPct = (int) ((usedMem / (double) memoryInfo.totalMem) * 100);
+            if (tvMemory != null) tvMemory.setText("RAM: " + memPct + "%");
+        }
 
         if (tvAccessibility != null) {
             if (MacroAccessibilityService.instance != null) {
@@ -340,15 +233,40 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        // [홈 버튼 클릭 시] 열려 있는 전체 앱 서랍 창을 자동으로 닫고 메인 대시보드로 복귀
+        if (appDrawerDialog != null && appDrawerDialog.isShowing()) {
+            appDrawerDialog.dismiss();
+            appDrawerDialog = null;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        // 1. 전체 앱 서랍 창이 열려 있다면 서랍 창을 먼저 닫음
+        if (appDrawerDialog != null && appDrawerDialog.isShowing()) {
+            appDrawerDialog.dismiss();
+            appDrawerDialog = null;
+            return;
+        }
+        // 2. 메인 홈 화면에서는 뒤로가기를 눌러도 액티비티가 종료(finish)되지 않고 카홈 홈 화면을 안전하게 유지함
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (appDrawerDialog != null && appDrawerDialog.isShowing()) {
+            appDrawerDialog.dismiss();
+            appDrawerDialog = null;
+        }
         if (statusHandler != null && statusRunnable != null) {
             statusHandler.removeCallbacks(statusRunnable);
         }
         if (batteryReceiver != null) {
             try { unregisterReceiver(batteryReceiver); } catch (Exception e) {}
         }
-        unregisterLocationUpdates();
     }
 
     // [전체 앱 서랍 다이얼로그] 구현
@@ -356,7 +274,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
         int macroCount = prefs.getInt("tmap_macro_count", 6);
         if (macroCount <= 0) {
-            // 0회 설정 시 매크로 실행 안 함
             return;
         }
 
@@ -381,32 +298,37 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         Collections.sort(allApps, new ResolveInfo.DisplayNameComparator(pm));
 
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_app_drawer, null);
-        GridView gridApps = dialogView.findViewById(R.id.gridApps);
+        RecyclerView recyclerApps = dialogView.findViewById(R.id.recyclerApps);
         EditText etSearch = dialogView.findViewById(R.id.etSearchApp);
-        ImageView btnClose = dialogView.findViewById(R.id.btnCloseDrawer);
 
-        AppDrawerAdapter adapter = new AppDrawerAdapter(this, allApps, pm);
-        gridApps.setAdapter(adapter);
+        recyclerApps.setLayoutManager(new GridLayoutManager(this, 4));
+        recyclerApps.setHasFixedSize(true);
+        recyclerApps.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        AlertDialog dialog = new AlertDialog.Builder(this)
+        AppDrawerAdapter adapter = new AppDrawerAdapter(this, allApps, pm, appInfo -> {
+            launchApp(appInfo.activityInfo.packageName);
+            if (appDrawerDialog != null && appDrawerDialog.isShowing()) {
+                appDrawerDialog.dismiss();
+                appDrawerDialog = null;
+            }
+        });
+        recyclerApps.setAdapter(adapter);
+
+        if (appDrawerDialog != null && appDrawerDialog.isShowing()) {
+            appDrawerDialog.dismiss();
+        }
+
+        appDrawerDialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().setLayout(
+        if (appDrawerDialog.getWindow() != null) {
+            appDrawerDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            appDrawerDialog.getWindow().setLayout(
                     (int) (getResources().getDisplayMetrics().widthPixels * 0.92),
                     (int) (getResources().getDisplayMetrics().heightPixels * 0.88)
             );
         }
-
-        gridApps.setOnItemClickListener((parent, view, position, id) -> {
-            ResolveInfo appInfo = adapter.getItem(position);
-            if (appInfo != null) {
-                launchApp(appInfo.activityInfo.packageName);
-                dialog.dismiss();
-            }
-        });
 
         // 실시간 앱 검색 필터링
         etSearch.addTextChangedListener(new TextWatcher() {
@@ -420,8 +342,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             public void afterTextChanged(Editable s) {}
         });
 
-        btnClose.setOnClickListener(v -> dialog.dismiss());
-        dialog.show();
+        appDrawerDialog.setOnDismissListener(dialogInterface -> appDrawerDialog = null);
+        appDrawerDialog.show();
     }
 
     // 다른 앱 실행 공통 메서드
@@ -476,7 +398,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 executeTmapMacro();
             }
         } catch (Exception e) {
-            // 안심주행 스킴 실패 시 기본 패키지 인텐트로 폴백
             try {
                 Intent fallback = getPackageManager().getLaunchIntentForPackage("com.skt.tmap.ku");
                 if (fallback != null) {
@@ -491,18 +412,37 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
     }
 
-    // 전체 앱 서랍 어댑터 클래스
-    static class AppDrawerAdapter extends BaseAdapter {
+    // 전체 앱 서랍 어댑터 클래스 (RecyclerView 기반 고성능/스크롤 버그 방지 어댑터)
+    static class AppDrawerAdapter extends RecyclerView.Adapter<AppDrawerAdapter.ViewHolder> {
+        interface OnItemClickListener {
+            void onItemClick(ResolveInfo info);
+        }
+
         private Context context;
         private List<ResolveInfo> originalList;
         private List<ResolveInfo> filteredList;
         private PackageManager pm;
+        private OnItemClickListener listener;
+        private Map<String, Drawable> iconCache = new HashMap<>();
+        private Map<String, String> labelCache = new HashMap<>();
 
-        public AppDrawerAdapter(Context context, List<ResolveInfo> apps, PackageManager pm) {
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            ImageView imgIcon;
+            TextView tvName;
+
+            public ViewHolder(View itemView) {
+                super(itemView);
+                imgIcon = itemView.findViewById(R.id.imgAppIcon);
+                tvName = itemView.findViewById(R.id.tvAppName);
+            }
+        }
+
+        public AppDrawerAdapter(Context context, List<ResolveInfo> apps, PackageManager pm, OnItemClickListener listener) {
             this.context = context;
             this.originalList = new ArrayList<>(apps);
             this.filteredList = new ArrayList<>(apps);
             this.pm = pm;
+            this.listener = listener;
         }
 
         public void filter(String query) {
@@ -512,8 +452,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             } else {
                 String lowerQuery = query.toLowerCase().trim();
                 for (ResolveInfo info : originalList) {
-                    CharSequence label = info.loadLabel(pm);
-                    if (label != null && label.toString().toLowerCase().contains(lowerQuery)) {
+                    String pkg = info.activityInfo.packageName;
+                    String label = labelCache.get(pkg);
+                    if (label == null) {
+                        CharSequence cs = info.loadLabel(pm);
+                        label = cs != null ? cs.toString() : "";
+                        labelCache.put(pkg, label);
+                    }
+                    if (label.toLowerCase().contains(lowerQuery)) {
                         filteredList.add(info);
                     }
                 }
@@ -521,38 +467,48 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             notifyDataSetChanged();
         }
 
+        @NonNull
         @Override
-        public int getCount() {
-            return filteredList.size();
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(context).inflate(R.layout.item_app_grid, parent, false);
+            return new ViewHolder(view);
         }
 
         @Override
-        public ResolveInfo getItem(int position) {
-            return filteredList.get(position);
-        }
-
-        @Override
-        public long getItemId(int position) {
-            return position;
-        }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = LayoutInflater.from(context).inflate(R.layout.item_app_grid, parent, false);
-            }
-
-            ImageView imgIcon = convertView.findViewById(R.id.imgAppIcon);
-            TextView tvName = convertView.findViewById(R.id.tvAppName);
-
-            ResolveInfo info = getItem(position);
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            ResolveInfo info = filteredList.get(position);
             if (info != null) {
-                tvName.setText(info.loadLabel(pm));
-                Drawable icon = info.loadIcon(pm);
-                imgIcon.setImageDrawable(icon);
-            }
+                String pkg = info.activityInfo.packageName;
+                String label = labelCache.get(pkg);
+                if (label == null) {
+                    CharSequence cs = info.loadLabel(pm);
+                    label = cs != null ? cs.toString() : "";
+                    labelCache.put(pkg, label);
+                }
+                holder.tvName.setText(label);
 
-            return convertView;
+                Drawable icon = iconCache.get(pkg);
+                if (icon == null) {
+                    try {
+                        icon = info.loadIcon(pm);
+                    } catch (Exception e) {
+                        icon = pm.getDefaultActivityIcon();
+                    }
+                    iconCache.put(pkg, icon);
+                }
+                holder.imgIcon.setImageDrawable(icon);
+
+                holder.itemView.setOnClickListener(v -> {
+                    if (listener != null) {
+                        listener.onItemClick(info);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public int getItemCount() {
+            return filteredList.size();
         }
     }
 }

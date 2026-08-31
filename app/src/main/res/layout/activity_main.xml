@@ -4,19 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#121212"
+    android:background="#101014"
     android:paddingStart="24dp"
     android:paddingEnd="24dp"
     android:paddingTop="16dp"
-    android:paddingBottom="16dp">
+    android:paddingBottom="20dp">
 
-    <!-- 1. 상단 상태 표시줄 (가로 1줄 고정, 줄바꿈/깨짐 방지) -->
+    <!-- 1. 상단 상태 표시줄 (RAM, 배터리, 매크로 상태) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginBottom="12dp">
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
 
         <!-- RAM 사용량 -->
         <TextView
@@ -24,11 +24,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="RAM: 0%"
-            android:textColor="#DDDDDD"
-            android:textSize="15sp"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:singleLine="true"
-            android:layout_marginEnd="14dp" />
+            android:layout_marginEnd="16dp" />
 
         <!-- 배터리 잔량 & 충전 -->
         <TextView
@@ -36,11 +36,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="BAT: 100%"
-            android:textColor="#DDDDDD"
-            android:textSize="15sp"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
             android:textStyle="bold"
-            android:singleLine="true"
-            android:layout_marginEnd="14dp" />
+            android:singleLine="true" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
         <!-- 접근성 매크로 상태 (터치 시 설정 바로가기) -->
         <LinearLayout
@@ -50,11 +54,10 @@
             android:orientation="horizontal"
             android:gravity="center"
             android:background="@drawable/bg_dock_btn"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:layout_marginEnd="14dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
             android:clickable="true"
             android:focusable="true">
 
@@ -64,24 +67,13 @@
                 android:layout_height="wrap_content"
                 android:text="🔴 매크로 꺼짐 (터치)"
                 android:textColor="#FF5252"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:singleLine="true" />
         </LinearLayout>
-
-        <!-- GPS 상태 (줄바꿈 방지) -->
-        <TextView
-            android:id="@+id/tvGpsStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="GPS: 준비"
-            android:textColor="#3DDC84"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:singleLine="true" />
     </LinearLayout>
 
-    <!-- 2. 중앙 대시보드 영역 (날짜 -> 시계 -> GPS 속도계) -->
+    <!-- 2. 중앙 대시보드 영역 (날짜 & 대형 디지털 시계) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -89,26 +81,25 @@
         android:orientation="vertical"
         android:gravity="center">
 
-        <!-- [1] 날짜 및 요일 (시간 바로 윗줄 배치) -->
+        <!-- 날짜 및 요일 -->
         <TextClock
             android:id="@+id/textClockDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:format12Hour="yyyy년 M월 d일 (E)"
             android:format24Hour="yyyy년 M월 d일 (E)"
-            android:textColor="#B0B0B0"
-            android:textSize="24sp"
+            android:textColor="#8E8E98"
+            android:textSize="22sp"
             android:textStyle="bold"
             android:layout_marginBottom="2dp" />
 
-        <!-- [2] 대형 디지털 시계 (시간 + AM/PM) -->
+        <!-- 대형 디지털 시계 -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:baselineAligned="true"
-            android:layout_marginBottom="12dp">
+            android:baselineAligned="true">
 
             <TextClock
                 android:id="@+id/textClock"
@@ -117,7 +108,7 @@
                 android:format12Hour="hh:mm"
                 android:format24Hour="HH:mm"
                 android:textColor="#FFFFFF"
-                android:textSize="72sp"
+                android:textSize="82sp"
                 android:textStyle="bold" />
 
             <TextClock
@@ -131,144 +122,158 @@
                 android:textStyle="bold"
                 android:layout_marginStart="8dp" />
         </LinearLayout>
-
-        <!-- [3] GPS 실시간 디지털 속도계 & 주행 방위 카드 -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:background="@drawable/bg_card_dark"
-            android:paddingStart="40dp"
-            android:paddingEnd="40dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp">
-
-            <TextView
-                android:id="@+id/tvGpsSpeed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0 km/h"
-                android:textColor="#FFFFFF"
-                android:textSize="44sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvGpsHeading"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="[ 🧭 정지 ]"
-                android:textColor="#3DDC84"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
     </LinearLayout>
 
-    <!-- 3. 하단 4대 버튼 (윗줄: 티맵 + 태블릿 설정 / 아랫줄: 전체 앱 + CarHome 설정) -->
+    <!-- 3. 하단 2행 2열 대형 아이콘 중심 카드 그리드 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="12dp">
+        android:orientation="vertical">
 
-        <!-- 윗줄: [🚗 티맵] & [⚙️ 태블릿 설정] -->
+        <!-- 1행: [🚗 티맵]  &  [🗂️ 전체 앱] -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="12dp"
             android:weightSum="2">
 
+            <!-- 1-1. 🚗 티맵 (실제 티맵 앱 아이콘 3배 대형 표시) -->
             <LinearLayout
                 android:id="@+id/btnNavi"
                 android:layout_width="0dp"
-                android:layout_height="68dp"
+                android:layout_height="115dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_dock_btn"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_card_dock_item"
+                android:orientation="vertical"
                 android:gravity="center"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:clickable="true"
                 android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgNaviIcon"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:src="@drawable/ic_btn_tmap"
+                    android:scaleType="fitCenter" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🚗  티맵 (TMAP)"
+                    android:text="티맵"
                     android:textColor="#3DDC84"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
 
+            <!-- 1-2. 🗂️ 전체 앱 서랍 -->
             <LinearLayout
-                android:id="@+id/btnSystemSettings"
+                android:id="@+id/btnAllApps"
                 android:layout_width="0dp"
-                android:layout_height="68dp"
+                android:layout_height="115dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_dock_btn"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_card_dock_item"
+                android:orientation="vertical"
                 android:gravity="center"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:clickable="true"
                 android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgAllAppsIcon"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:src="@drawable/ic_btn_apps_drawer"
+                    android:scaleType="fitCenter" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="📱  태블릿 설정"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:text="전체 앱"
+                    android:textColor="#FFB74D"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 아랫줄: [📦 전체 앱] & [🛠️ CarHome 설정] -->
+        <!-- 2행: [🛠️ 카홈설정]  &  [⚙️ 태블릿 환경설정] -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"
             android:weightSum="2">
 
-            <LinearLayout
-                android:id="@+id/btnAllApps"
-                android:layout_width="0dp"
-                android:layout_height="68dp"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/bg_dock_btn"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📦  전체 앱 서랍"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
+            <!-- 2-1. 🛠️ 카홈설정 (CarHome 환경설정) -->
             <LinearLayout
                 android:id="@+id/btnSettings"
                 android:layout_width="0dp"
-                android:layout_height="68dp"
+                android:layout_height="115dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_dock_btn"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_card_dock_item"
+                android:orientation="vertical"
                 android:gravity="center"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
                 android:clickable="true"
                 android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgSettingsIcon"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:src="@drawable/ic_btn_carhome_settings"
+                    android:scaleType="fitCenter" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="⚙️  환경설정"
-                    android:textColor="#FFFFFF"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:text="카홈 설정"
+                    android:textColor="#BA68C8"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- 2-2. ⚙️ 태블릿 환경설정 (시스템 설정) -->
+            <LinearLayout
+                android:id="@+id/btnSystemSettings"
+                android:layout_width="0dp"
+                android:layout_height="115dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_card_dock_item"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgSystemSettingsIcon"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:src="@drawable/ic_btn_settings_sys"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="태블릿 설정"
+                    android:textColor="#64B5F6"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+
 </LinearLayout>
