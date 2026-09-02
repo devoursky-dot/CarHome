@@ -429,47 +429,15 @@ public class BrowserActivity extends AppCompatActivity {
                 "  if (window.__carHomeAdBlockInitialized) return;" +
                 "  window.__carHomeAdBlockInitialized = true;" +
                 "  window.__lastQualityReported = '';" +
-                "  window.__safeSkipAdLastRun = 0;" +
                 "  try {" +
                 "    var qObj = { data: 'tiny', expiration: Date.now() + 315360000000, creation: Date.now() };" +
                 "    localStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
                 "    sessionStorage.setItem('yt-player-quality', JSON.stringify(qObj));" +
                 "  } catch(e) {}" +
-                "  function applyAdBlockCss() {" +
-                "    if (!document.getElementById('carhome-adblock-style') && (document.head || document.documentElement)) {" +
-                "      var style = document.createElement('style');" +
-                "      style.id = 'carhome-adblock-style';" +
-                "      style.innerHTML = '" +
-                "        .ad-showing, .ad-interrupting, .ytp-ad-overlay-container, " +
-                "        .ytp-ad-message-container, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, " +
-                "        ytd-promoted-video-renderer, ytd-banner-promo-renderer, " +
-                "        ytd-promoted-sparkles-web-renderer, ytd-display-ad-renderer, " +
-                "        ytd-ad-slot-renderer, .ytp-ad-action-interstitial, " +
-                "        ytd-action-companion-ad-renderer, ytd-in-feed-ad-layout-renderer, " +
-                "        #player-ads, .video-ads, yt-mealbar-promo-renderer, " +
-                "        ytd-popup-container yt-mealbar-promo-renderer, " +
-                "        .ytp-ad-text, .ytp-ad-preview-container, .ytp-ad-preview-text, " +
-                "        .ytp-ad-image-overlay, #offer-module, .ad-container, " +
-                "        ytm-promoted-sparkles-web-renderer, ytm-promoted-video-renderer, " +
-                "        .ytm-promoted-sparkles-text-search-renderer { " +
-                "          display: none !important; " +
-                "          visibility: hidden !important; " +
-                "          height: 0 !important; " +
-                "          opacity: 0 !important; " +
-                "          pointer-events: none !important; " +
-                "        }';" +
-                "      (document.head || document.documentElement).appendChild(style);" +
-                "    }" +
-                "  }" +
-                "  applyAdBlockCss();" +
-                "  var isHandlingAd = false;" +
                 "  function safeSkipAd() {" +
-                "    var now = Date.now();" +
-                "    if (now - window.__safeSkipAdLastRun < 1000) return;" +
-                "    window.__safeSkipAdLastRun = now;" +
                 "    try {" +
                 "      var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
-                "      var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytp-ad-player-overlay-layout, .ytp-ad-module, .video-ads, [class*=\"ad-showing\"], .ytm-player-ad');" +
+                "      var isAd = document.querySelector('.ad-showing, .ad-interrupting, .ytp-ad-player-overlay, .ytm-player-ad, ytm-promoted-video-renderer');" +
                 "      if (player && (player.classList.contains('ad-showing') || player.classList.contains('ad-interrupting'))) {" +
                 "        isAd = true;" +
                 "      }" +
@@ -477,42 +445,27 @@ public class BrowserActivity extends AppCompatActivity {
                 "      if (isAd && video) {" +
                 "        video.muted = true;" +
                 "        window.__carHomeWasMutedByAdBlock = true;" +
-                "        if (player && typeof player.skipAd === 'function') {" +
-                "          try { player.skipAd(); } catch(e) {}" +
-                "        }" +
-                "        if (!isHandlingAd) {" +
-                "          isHandlingAd = true;" +
-                "          if (video.duration && !isNaN(video.duration) && isFinite(video.duration) && video.duration > 0) {" +
-                "            video.currentTime = Math.max(0, video.duration - 0.2);" +
-                "          }" +
+                "        if (player && typeof player.skipAd === 'function') { try { player.skipAd(); } catch(e) {} }" +
+                "        if (video.duration && !isNaN(video.duration) && video.duration - video.currentTime > 0.5) {" +
+                "          video.currentTime = Math.max(0, video.duration - 0.1);" +
                 "          if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('ad_skipped'); }" +
-                "          setTimeout(function() { isHandlingAd = false; }, 1500);" +
                 "        }" +
                 "      } else if (!isAd && video && window.__carHomeWasMutedByAdBlock) {" +
                 "        video.muted = false;" +
                 "        if (player && typeof player.unMute === 'function') { try { player.unMute(); } catch(e) {} }" +
                 "        window.__carHomeWasMutedByAdBlock = false;" +
                 "      }" +
-                "      var skipButtons = document.querySelectorAll('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .videoAdUiSkipButton, .ytp-ad-skip-button-slot button, button.ytp-ad-skip-button, button.ytp-ad-skip-button-modern, .ytp-ad-overlay-close-button, .ytp-ad-overlay-close-container, .ytp-ad-skip-slot button, button[class*=\"skip-button\"], button[aria-label*=\"광고 건너뛰기\"], button[aria-label*=\"Skip ad\"], .ytp-skip-ad-button');" +
+                "      var skipButtons = document.querySelectorAll('.ytp-ad-skip-button, .ytm-skip-ad-button, .videoAdUiSkipButton');" +
                 "      for (var i = 0; i < skipButtons.length; i++) {" +
-                "        try {" +
-                "          skipButtons[i].click();" +
-                "          if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('skip_button_clicked'); }" +
-                "        } catch(e) {}" +
+                "        try { skipButtons[i].click(); if (window.AndroidAdBlock) { window.AndroidAdBlock.onAdSkipped('skip_button_clicked'); } } catch(e) {}" +
                 "      }" +
-                "      var dismissBtns = document.querySelectorAll('yt-button-renderer#dismiss-button, button[aria-label=\"닫기\"], button[aria-label=\"Close\"], #dismiss-button');" +
+                "      var dismissBtns = document.querySelectorAll('yt-button-renderer#dismiss-button, #dismiss-button');" +
                 "      for (var j = 0; j < dismissBtns.length; j++) {" +
                 "        try { if (dismissBtns[j].offsetParent !== null) dismissBtns[j].click(); } catch(e) {}" +
                 "      }" +
-                "      if (player) {" +
-                "        if (!window.__carHomeUserSelectedQuality) {" +
-                "          if (typeof player.setPlaybackQualityRange === 'function') {" +
-                "            player.setPlaybackQualityRange('tiny', 'tiny');" +
-                "          }" +
-                "          if (typeof player.setPlaybackQuality === 'function') {" +
-                "            player.setPlaybackQuality('tiny');" +
-                "          }" +
-                "        }" +
+                "      if (player && !window.__carHomeUserSelectedQuality) {" +
+                "        if (typeof player.setPlaybackQualityRange === 'function') { player.setPlaybackQualityRange('tiny', 'tiny'); }" +
+                "        if (typeof player.setPlaybackQuality === 'function') { player.setPlaybackQuality('tiny'); }" +
                 "        if (typeof player.getPlaybackQuality === 'function') {" +
                 "          var q = player.getPlaybackQuality();" +
                 "          if (q && q !== window.__lastQualityReported && window.AndroidQuality) {" +
@@ -523,38 +476,15 @@ public class BrowserActivity extends AppCompatActivity {
                 "      }" +
                 "    } catch(err) {}" +
                 "  }" +
-                "  function attachPlayerObserver() {" +
-                "    try {" +
-                "      var player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');" +
-                "      if (player && !player.__carHomeObserverAttached) {" +
-                "        player.__carHomeObserverAttached = true;" +
-                "        var playerObserver = new MutationObserver(function(mutations) {" +
-                "          for (var i = 0; i < mutations.length; i++) {" +
-                "            if (mutations[i].attributeName === 'class') {" +
-                "              safeSkipAd();" +
-                "              break;" +
-                "            }" +
-                "          }" +
-                "        });" +
-                "        playerObserver.observe(player, { attributes: true, attributeFilter: ['class'] });" +
-                "      }" +
-                "    } catch(e) {}" +
-                "  }" +
-                "  attachPlayerObserver();" +
                 "  safeSkipAd();" +
                 "  if (!window.carHomeAdBlockTimer) {" +
-                "    window.carHomeAdBlockTimer = setInterval(function() {" +
-                "      attachPlayerObserver();" +
-                "      safeSkipAd();" +
-                "    }, 3000);" +
+                "    window.carHomeAdBlockTimer = setInterval(safeSkipAd, 500);" +
                 "  }" +
                 "  if (!window.__carHomeQualityEventAttached) {" +
                 "    window.__carHomeQualityEventAttached = true;" +
                 "    document.addEventListener('yt-navigate-finish', function() {" +
                 "      window.__carHomeUserSelectedQuality = false;" +
                 "      window.__lastQualityReported = '';" +
-                "      window.__safeSkipAdLastRun = 0;" +
-                "      attachPlayerObserver();" +
                 "      safeSkipAd();" +
                 "    });" +
                 "  }" +
