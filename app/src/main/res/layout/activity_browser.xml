@@ -14,16 +14,16 @@
         android:keepScreenOn="true"
         android:background="#000000">
 
-        <!-- 상단 3단 툴바 (깔끔한 4x3 균등 배치) -->
+        <!-- 상단 2단 툴바 (배속과 해상도 2줄 균등 배치) -->
         <LinearLayout
             android:id="@+id/menuLayout"
             android:layout_width="match_parent"
-            android:layout_height="180dp"
+            android:layout_height="84dp"
             android:orientation="vertical"
             android:background="#121212"
             android:gravity="center">
 
-            <!-- 첫 번째 줄 (Group 1): [🛡️ 광고차단 상태 배지] & 배속 조절 -->
+            <!-- 첫 번째 줄 (Group 1): [💾 RAM 배지] & 배속 조절 (1X, 1.5X, 2X) -->
             <LinearLayout
                 android:id="@+id/menuGroup1"
                 android:layout_width="match_parent"
@@ -31,16 +31,17 @@
                 android:layout_weight="1"
                 android:orientation="horizontal">
 
-                <!-- 현재 해상도 실시간 표시 배지 버튼 (기본 144P) -->
+                <!-- 실시간 RAM 상태 모니터링 배지 버튼 -->
                 <TextView
-                    android:id="@+id/btnResolutionStatus"
+                    android:id="@+id/btnRamStatus"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="📺 144P"
+                    android:layout_weight="1.2"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_btn_inactive"
+                    android:text="💾 RAM 확인중"
                     android:textColor="#3DDC84"
-                    android:textSize="16sp"
+                    android:textSize="12sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -51,10 +52,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="1X"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -65,10 +67,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="1.5X"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -79,82 +82,18 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="2X"
                     android:textColor="#FFFFFF"
-                    android:textSize="18sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
                     android:focusable="true" />
             </LinearLayout>
 
-            <!-- 두 번째 줄 (Group 2): 앞뒤 이동 전용 (1분, 10초) -->
-            <LinearLayout
-                android:id="@+id/menuGroup2"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/btnRewind"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="&lt;&lt; 1분"
-                    android:textColor="#FFFFFF"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/btnRewind10"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="&lt; 10초"
-                    android:textColor="#FFFFFF"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/btnForward10"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="10초 &gt;"
-                    android:textColor="#FFFFFF"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/btnForward"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
-                    android:text="1분 &gt;&gt;"
-                    android:textColor="#FFFFFF"
-                    android:textSize="17sp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-
-            <!-- 세 번째 줄 (Group 3): 해상도 조절 (144P, 240P, 360P, 480P, 720P, 1080P) -->
+            <!-- 두 번째 줄 (Group 3): 해상도 조절 (144P, 240P, 360P, 480P, 720P, 1080P) -->
             <LinearLayout
                 android:id="@+id/menuGroup3"
                 android:layout_width="match_parent"
@@ -167,10 +106,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="144P"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -181,10 +121,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="240P"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -195,10 +136,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="360P"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -209,10 +151,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="480P"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -223,10 +166,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="720P"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"
@@ -237,10 +181,11 @@
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_round_btn"
+                    android:layout_margin="2dp"
+                    android:background="@drawable/bg_btn_inactive"
                     android:text="1080P"
                     android:textColor="#3DDC84"
-                    android:textSize="14sp"
+                    android:textSize="13sp"
                     android:textStyle="bold"
                     android:gravity="center"
                     android:clickable="true"

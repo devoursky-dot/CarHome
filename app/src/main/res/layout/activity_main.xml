@@ -65,7 +65,7 @@
                 android:id="@+id/tvAccessibility"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔴 매크로 꺼짐 (터치)"
+                android:text="🔴 자동화 꺼짐 (터치)"
                 android:textColor="#FF5252"
                 android:textSize="13sp"
                 android:textStyle="bold"
@@ -124,39 +124,61 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 3. 하단 2행 2열 대형 아이콘 중심 카드 그리드 -->
+    <!-- 3. 유튜브 등록 채널 가로 스크롤 독 바 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="12dp">
+
+        <HorizontalScrollView
+            android:id="@+id/mainChannelScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/mainChannelContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical" />
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- 4. 하단 2행 3열 대형 카드 그리드 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 1행: [🚗 티맵]  &  [🗂️ 전체 앱] -->
+        <!-- 1행 (3개 카드): [🚗 티맵]  &  [🎬 비디오]  &  [🌐 인터넷] -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="12dp"
-            android:weightSum="2">
+            android:layout_marginBottom="10dp"
+            android:weightSum="3">
 
-            <!-- 1-1. 🚗 티맵 (실제 티맵 앱 아이콘 3배 대형 표시) -->
+            <!-- 1-1. 🚗 티맵 -->
             <LinearLayout
                 android:id="@+id/btnNavi"
                 android:layout_width="0dp"
-                android:layout_height="115dp"
+                android:layout_height="100dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="5dp"
                 android:background="@drawable/bg_card_dock_item"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
                     android:id="@+id/imgNaviIcon"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     android:src="@drawable/ic_btn_tmap"
                     android:scaleType="fitCenter" />
 
@@ -170,25 +192,96 @@
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
-            <!-- 1-2. 🗂️ 전체 앱 서랍 -->
+            <!-- 1-2. 🎬 비디오 -->
             <LinearLayout
-                android:id="@+id/btnAllApps"
+                android:id="@+id/btnMainVideo"
                 android:layout_width="0dp"
-                android:layout_height="115dp"
+                android:layout_height="100dp"
                 android:layout_weight="1"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
                 android:background="@drawable/bg_card_dock_item"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgMainVideoIcon"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="비디오"
+                    android:textColor="#4DD0E1"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <!-- 1-3. 🌐 인터넷 (크롬) -->
+            <LinearLayout
+                android:id="@+id/btnMainBrave"
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:background="@drawable/bg_card_dock_item"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/imgMainBraveIcon"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="인터넷"
+                    android:textColor="#81C784"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 2행 (3개 카드): [🗂️ 전체 앱]  &  [🧹 RAM 청소]  &  [⚙️ 태블릿 설정] -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="3">
+
+            <!-- 2-1. 🗂️ 전체 앱 서랍 -->
+            <LinearLayout
+                android:id="@+id/btnAllApps"
+                android:layout_width="0dp"
+                android:layout_height="100dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="5dp"
+                android:background="@drawable/bg_card_dock_item"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
                     android:id="@+id/imgAllAppsIcon"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     android:src="@drawable/ic_btn_apps_drawer"
                     android:scaleType="fitCenter" />
 
@@ -201,66 +294,59 @@
                     android:textStyle="bold"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
-        </LinearLayout>
 
-        <!-- 2행: [🛠️ 카홈설정]  &  [⚙️ 태블릿 환경설정] -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="2">
-
-            <!-- 2-1. 🛠️ 카홈설정 (CarHome 환경설정) -->
+            <!-- 2-2. 🧹 RAM 청소 -->
             <LinearLayout
-                android:id="@+id/btnSettings"
+                android:id="@+id/btnMainClean"
                 android:layout_width="0dp"
-                android:layout_height="115dp"
+                android:layout_height="100dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="6dp"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="3dp"
                 android:background="@drawable/bg_card_dock_item"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
-                    android:id="@+id/imgSettingsIcon"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
-                    android:src="@drawable/ic_btn_carhome_settings"
+                    android:id="@+id/imgMainCleanIcon"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:src="@android:drawable/ic_menu_delete"
                     android:scaleType="fitCenter" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="카홈 설정"
-                    android:textColor="#BA68C8"
+                    android:text="RAM 청소"
+                    android:textColor="#E57373"
                     android:textSize="13sp"
                     android:textStyle="bold"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
 
-            <!-- 2-2. ⚙️ 태블릿 환경설정 (시스템 설정) -->
+            <!-- 2-3. ⚙️ 태블릿 환경설정 -->
             <LinearLayout
                 android:id="@+id/btnSystemSettings"
                 android:layout_width="0dp"
-                android:layout_height="115dp"
+                android:layout_height="100dp"
                 android:layout_weight="1"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="5dp"
                 android:background="@drawable/bg_card_dock_item"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <ImageView
                     android:id="@+id/imgSystemSettingsIcon"
-                    android:layout_width="72dp"
-                    android:layout_height="72dp"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
                     android:src="@drawable/ic_btn_settings_sys"
                     android:scaleType="fitCenter" />
 

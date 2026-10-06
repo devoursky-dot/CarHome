@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="18dp" />
+    <!-- 이동 모드 활성화 시 더 밝고 또렷한 하이라이트 배경 -->
+    <solid android:color="#F21A384A" />
+    <!-- 4dp 굵기의 밝은 네온 사이언 테두리로 이동 모드 시각화 -->
+    <stroke
+        android:width="4dp"
+        android:color="#00E5FF" />
+</shape>

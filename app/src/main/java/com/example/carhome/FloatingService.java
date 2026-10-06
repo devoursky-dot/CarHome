@@ -3,7 +3,6 @@ package com.example.carhome;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.app.ActivityOptions;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -17,15 +16,15 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import java.lang.reflect.Method;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 import android.view.Gravity;
@@ -35,6 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -53,6 +53,8 @@ import java.util.Set;
 
 public class FloatingService extends Service {
 
+    public static FloatingService instance;
+
     private WindowManager windowManager;
     private View floatingView;
     private View handleBar;
@@ -61,9 +63,15 @@ public class FloatingService extends Service {
     private Runnable hideRunnable;
     private WindowManager.LayoutParams params;
     private Handler autoLaunchHandler = new Handler(Looper.getMainLooper());
-    private Handler powerOffHandler = new Handler(Looper.getMainLooper());
     private Handler powerDisconnectDebounceHandler = new Handler(Looper.getMainLooper());
     private boolean isCountingDownToPowerOff = false;
+
+    // 카홈 메인 홈 화면 진입 시 플로팅 위젯 중복 겹침 방지 가시성 제어
+    public void setFloatingVisibility(boolean visible) {
+        if (floatingView != null) {
+            floatingView.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
 
     // [수정 3] BrowserActivity가 포그라운드에 있는지 확인 (유튜브 시청 중 강제 종료 방지)
     private boolean isBrowserInForeground() {
@@ -108,61 +116,12 @@ public class FloatingService extends Service {
         return false;
     }
 
-    private final BroadcastReceiver settingsReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if ("com.example.carhome.UPDATE_SETTINGS".equals(intent.getAction())) {
-                SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-                String key = intent.getStringExtra("key");
-
-                if ("popup_y".equals(key)) {
-                    if (floatingContent != null) floatingContent.setVisibility(View.VISIBLE);
-                    if (handleBar != null) handleBar.setVisibility(View.GONE);
-                    params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
-                    params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-                    params.x = 0;
-                    params.y = prefs.getInt("popup_y", 200);
-
-                    hideHandler.removeCallbacks(hideRunnable);
-                    hideHandler.postDelayed(hideRunnable, 3000);
-                } else if ("floating_y".equals(key) || "handle_clock_size".equals(key)) {
-                    if (floatingContent != null) floatingContent.setVisibility(View.GONE);
-                    if (handleBar != null) handleBar.setVisibility(View.VISIBLE);
-                    params.width = WindowManager.LayoutParams.WRAP_CONTENT;
-                    params.gravity = Gravity.BOTTOM | Gravity.END;
-                    params.x = 32;
-                    params.y = prefs.getInt("floating_y", 132);
-
-                    applySizesToViews(prefs);
-                } else if ("popup_clock_size".equals(key) || "popup_icon_size".equals(key)) {
-                    if (floatingContent != null) floatingContent.setVisibility(View.VISIBLE);
-                    if (handleBar != null) handleBar.setVisibility(View.GONE);
-                    params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
-                    params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-                    params.x = 0;
-                    params.y = prefs.getInt("popup_y", 200);
-
-                    applySizesToViews(prefs);
-
-                    hideHandler.removeCallbacks(hideRunnable);
-                    hideHandler.postDelayed(hideRunnable, 3000);
-                }
-                try {
-                    windowManager.updateViewLayout(floatingView, params);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    };
-
     private final BroadcastReceiver powerReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (Intent.ACTION_POWER_CONNECTED.equals(intent.getAction())) {
-                // 1. 전원 차단 디바운스 및 카운트다운 타이머 즉시 취소
+                // 1. 전원 차단 디바운스 타이머 즉시 취소
                 powerDisconnectDebounceHandler.removeCallbacksAndMessages(null);
-                powerOffHandler.removeCallbacksAndMessages(null);
 
                 boolean wasCountingDown = isCountingDownToPowerOff;
                 isCountingDownToPowerOff = false;
@@ -172,7 +131,7 @@ public class FloatingService extends Service {
 
                 // [진짜 시동 ON일 때만 실행]
                 // 화면이 꺼져 있던 상태(새로 시동 건 상태)이거나,
-                // 직전에 전원이 끊겨서 실제로 10초 카운트다운이 돌고 있었을 때만 화면을 켜고 티맵 자동 실행
+                // 직전에 전원이 끊겨서 실제로 카운트다운이 돌고 있었을 때만 화면을 켜고 티맵 자동 실행
                 if (isScreenOff || wasCountingDown) {
                     // [문제 B 수정] 브라우저(유튜브) 사용 중이면 티맵 강제 실행을 차단하여 시청 중단 방지
                     if (isBrowserInForeground()) {
@@ -201,10 +160,12 @@ public class FloatingService extends Service {
                 // 사용자를 절대 방해하지 않고 현재 보던 화면을 100% 그대로 유지합니다.
             } else if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
                 autoLaunchHandler.removeCallbacksAndMessages(null);
+                isCountingDownToPowerOff = true;
 
                 // 5초 대기 후 전원이 계속 들어오지 않으면 바로 모든 앱 닫기 실행
                 powerDisconnectDebounceHandler.removeCallbacksAndMessages(null);
                 powerDisconnectDebounceHandler.postDelayed(() -> {
+                    isCountingDownToPowerOff = false;
                     if (!isCurrentlyCharging()) {
                         Toast.makeText(context, "전원 차단 5초 경과: 모든 앱 정리 후 5초 뒤 화면을 잠급니다 🧹💤", Toast.LENGTH_LONG).show();
                         cleanMemory();
@@ -229,10 +190,12 @@ public class FloatingService extends Service {
             floatingContent.setVisibility(View.GONE);
             handleBar.setVisibility(View.VISIBLE);
 
+            SharedPreferences p = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT;
             params.gravity = Gravity.BOTTOM | Gravity.END;
-            params.x = 32;
-            params.y = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("floating_y", 132);
+            params.x = p.getInt("floating_x", 32);
+            params.y = p.getInt("floating_y", 132);
 
             try {
                 windowManager.updateViewLayout(floatingView, params);
@@ -241,6 +204,9 @@ public class FloatingService extends Service {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            // 카홈 메인 홈 화면에 머물고 있다면 플로팅 위젯 숨김 유지
+            floatingView.setVisibility(MainActivity.isMainActivityResumed ? View.GONE : View.VISIBLE);
         }
         return START_STICKY;
     }
@@ -281,6 +247,7 @@ public class FloatingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
 
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
@@ -301,42 +268,134 @@ public class FloatingService extends Service {
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
 
         params.gravity = Gravity.BOTTOM | Gravity.END;
-        params.x = 32;
+        params.x = prefs.getInt("floating_x", 32);
         params.y = prefs.getInt("floating_y", 132);
 
         windowManager.addView(floatingView, params);
+
+        // 카홈 메인 홈 화면이 열려 있다면 플로팅 위젯을 즉시 숨겨 UI 겹침 방지
+        if (MainActivity.isMainActivityResumed) {
+            floatingView.setVisibility(View.GONE);
+        }
 
         handleBar = floatingView.findViewById(R.id.handleBar);
         floatingContent = floatingView.findViewById(R.id.floatingContent);
 
         hideRunnable = () -> {
+            if (floatingView != null) {
+                floatingView.setOnClickListener(null);
+            }
             floatingContent.setVisibility(View.GONE);
             handleBar.setVisibility(View.VISIBLE);
 
+            SharedPreferences p = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT;
             params.gravity = Gravity.BOTTOM | Gravity.END;
-            params.x = 32;
-            params.y = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("floating_y", 132);
+            params.x = p.getInt("floating_x", 32);
+            params.y = p.getInt("floating_y", 132);
             try {
                 windowManager.updateViewLayout(floatingView, params);
             } catch (Exception ignored) {}
         };
 
-        handleBar.setOnClickListener(v -> {
-            handleBar.setVisibility(View.GONE);
-            floatingContent.setVisibility(View.VISIBLE);
+        // 플로팅 핸들바 터치: 1.5초 롱클릭 시 이동 모드 활성화 (테두리 굵어짐 + 진동), 일반 탭은 메뉴 토글
+        handleBar.setOnTouchListener(new View.OnTouchListener() {
+            private int initialX;
+            private int initialY;
+            private float initialTouchX;
+            private float initialTouchY;
+            private boolean isMoveMode = false;
+            private final Handler longPressHandler = new Handler(Looper.getMainLooper());
+            private final Runnable longPressRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    isMoveMode = true;
+                    // 1. 4dp 굵기의 밝은 네온 테두리 드로어블로 변경하여 "이동 가능" 시각화
+                    handleBar.setBackgroundResource(R.drawable.bg_floating_handle_moving);
 
-            params.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
-            params.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-            params.x = 0;
-            params.y = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("popup_y", 200);
-            try {
-                windowManager.updateViewLayout(floatingView, params);
-            } catch (Exception ignored) {}
+                    // 2. 햅틱 진동 피드백 (손끝으로 즉각 체감)
+                    try {
+                        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                        if (vibrator != null) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                vibrator.vibrate(VibrationEffect.createOneShot(60, VibrationEffect.DEFAULT_AMPLITUDE));
+                            } else {
+                                vibrator.vibrate(60);
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
+            };
 
-            hideHandler.removeCallbacks(hideRunnable);
-            int autoCloseSec = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("auto_close", 5);
-            hideHandler.postDelayed(hideRunnable, autoCloseSec * 1000L);
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        initialX = params.x;
+                        initialY = params.y;
+                        initialTouchX = event.getRawX();
+                        initialTouchY = event.getRawY();
+                        isMoveMode = false;
+
+                        // 1.5초 롱클릭 타이머 시작
+                        longPressHandler.postDelayed(longPressRunnable, 1500);
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        float dx = event.getRawX() - initialTouchX;
+                        float dy = event.getRawY() - initialTouchY;
+
+                        // 아직 이동 모드가 아닌데 손가락이 35px 이상 크게 벗어나면 롱클릭 취소
+                        if (!isMoveMode && Math.hypot(dx, dy) > 35) {
+                            longPressHandler.removeCallbacks(longPressRunnable);
+                        }
+
+                        // 1.5초 롱클릭 후 '이동 모드'가 켜졌을 때만 위치 이동 수행!
+                        if (isMoveMode) {
+                            // 반드시 WRAP_CONTENT로 유지하여 Y축 세로 이동이 막히지 않도록 보장
+                            params.width = WindowManager.LayoutParams.WRAP_CONTENT;
+                            params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                            params.gravity = Gravity.BOTTOM | Gravity.END;
+
+                            // Gravity.BOTTOM | Gravity.END 기준 위치 계산
+                            int newY = (int) (initialY - dy);
+                            int newX = (int) (initialX - dx);
+
+                            android.util.DisplayMetrics dm = getResources().getDisplayMetrics();
+                            int maxY = Math.max(100, dm.heightPixels - 100);
+                            int maxX = Math.max(100, dm.widthPixels - 100);
+
+                            params.y = Math.max(0, Math.min(newY, maxY));
+                            params.x = Math.max(0, Math.min(newX, maxX));
+                            try {
+                                windowManager.updateViewLayout(floatingView, params);
+                            } catch (Exception ignored) {}
+                        }
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        longPressHandler.removeCallbacks(longPressRunnable);
+
+                        if (isMoveMode) {
+                            // 이동 모드 종료: 원래의 얇고 깔끔한 테두리로 즉시 복원
+                            isMoveMode = false;
+                            handleBar.setBackgroundResource(R.drawable.bg_floating_handle);
+
+                            // 드래그 종료 시: 변경된 위치 영구 저장
+                            SharedPreferences.Editor editor = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).edit();
+                            editor.putInt("floating_y", params.y);
+                            editor.putInt("floating_x", params.x);
+                            editor.apply();
+                        } else {
+                            // 1.5초 미만 가벼운 탭(클릭): 100% 깔끔하게 플로팅 퀵 액션 메뉴 열기!
+                            showFloatingMenu();
+                        }
+                        return true;
+                }
+                return false;
+            }
         });
 
         ImageView btnTmap = floatingView.findViewById(R.id.btnFloatingTmap);
@@ -350,25 +409,23 @@ public class FloatingService extends Service {
         setAppIcon(btnBrave, "com.android.chrome");
 
         btnTmap.setOnClickListener(v -> {
-            launchApp("com.skt.tmap.ku");
+            launchAppFullScreen("com.skt.tmap.ku");
             hideHandler.post(hideRunnable);
         });
 
         btnVideo.setOnClickListener(v -> {
-            launchApp("com.samsung.android.videolist");
+            launchAppFullScreen("com.samsung.android.videolist");
             hideHandler.post(hideRunnable);
         });
 
         btnBrave.setOnClickListener(v -> {
-            launchApp("com.android.chrome");
+            launchAppFullScreen("com.android.chrome");
             hideHandler.post(hideRunnable);
         });
 
         if (btnAllApps != null) {
             btnAllApps.setOnClickListener(v -> {
-                Intent mainIntent = new Intent(this, MainActivity.class);
-                mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(mainIntent);
+                launchMainActivityFullScreen();
                 hideHandler.post(hideRunnable);
             });
         }
@@ -384,13 +441,50 @@ public class FloatingService extends Service {
         filter.addAction(Intent.ACTION_POWER_CONNECTED);
         filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
         registerReceiver(powerReceiver, filter);
+    }
 
-        IntentFilter settingsFilter = new IntentFilter("com.example.carhome.UPDATE_SETTINGS");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(settingsReceiver, settingsFilter, Context.RECEIVER_NOT_EXPORTED);
-        } else {
-            registerReceiver(settingsReceiver, settingsFilter);
+    private void showFloatingMenu() {
+        if (handleBar != null) handleBar.setVisibility(View.GONE);
+        if (floatingContent != null) {
+            floatingContent.setVisibility(View.VISIBLE);
+            // 팝업 메뉴 카드 내부 클릭은 바깥 닫기 이벤트로 넘어가지 않도록 방어
+            floatingContent.setOnClickListener(v -> {});
         }
+
+        // 팝업 표시 시: 화면 전체 크기로 확장하여 바깥 영역 터치 감지 가능하게 함
+        params.width = WindowManager.LayoutParams.MATCH_PARENT;
+        params.height = WindowManager.LayoutParams.MATCH_PARENT;
+        params.gravity = Gravity.FILL;
+        params.x = 0;
+        params.y = 0;
+
+        // 팝업 메뉴 카드의 크기 및 위치(하단 마진) 동적 배치
+        if (floatingContent != null) {
+            ViewGroup.LayoutParams lp = floatingContent.getLayoutParams();
+            if (lp instanceof FrameLayout.LayoutParams) {
+                FrameLayout.LayoutParams fParams = (FrameLayout.LayoutParams) lp;
+                fParams.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.9);
+                fParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+                fParams.bottomMargin = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("popup_y", 200);
+                floatingContent.setLayoutParams(fParams);
+            }
+        }
+
+        // 팝업 바깥쪽 아무 빈 공간 터치 시: 5초 대기 없이 즉시 닫기!
+        if (floatingView != null) {
+            floatingView.setOnClickListener(v -> {
+                hideHandler.removeCallbacks(hideRunnable);
+                hideRunnable.run();
+            });
+        }
+
+        try {
+            windowManager.updateViewLayout(floatingView, params);
+        } catch (Exception ignored) {}
+
+        hideHandler.removeCallbacks(hideRunnable);
+        int autoCloseSec = getSharedPreferences("CarHomePrefs", MODE_PRIVATE).getInt("auto_close", 5);
+        hideHandler.postDelayed(hideRunnable, autoCloseSec * 1000L);
     }
 
     private void applySizesToViews(SharedPreferences prefs) {
@@ -432,12 +526,11 @@ public class FloatingService extends Service {
         am.getMemoryInfo(beforeMem);
 
         // [1. 절대 강제 종료하면 안 되는 필수 보호 화이트리스트]
-        // [수정 4] WebView 렌더러 프로세스 보호 추가 (유튜브 시청 중 크래시 방지)
+        // [수정 4] WebView 렌더러 프로세스 및 핵심 필수 서비스 보호
         Set<String> protectedWhitelist = new HashSet<>(Arrays.asList(
                 getPackageName(),
                 "com.skt.tmap.ku",
                 "com.android.systemui",
-                "com.sec.android.app.launcher",
                 "com.android.launcher3",
                 "com.samsung.android.honeyboard",
                 "com.google.android.inputmethod.korean",
@@ -454,9 +547,15 @@ public class FloatingService extends Service {
 
         // [2. 메모리를 많이 먹는 불필요 백그라운드 앱 우선 타겟팅]
         String[] aggressiveTargets = {
-                "com.android.chrome",
-                "com.google.android.projection.gearhead",
-                "com.skt.skaf.OA00412131",
+                "com.android.vending",                  // 구글 플레이 스토어 (약 200MB)
+                "com.lguplus.appstore",                // U+ 스토어 (약 80MB)
+                "com.skt.skaf.OA00018282",             // SKT 원스토어 서비스 (약 21MB)
+                "com.skt.skaf.OA00412131",             // 원스토어 메인
+                "com.samsung.android.video",           // 삼성 비디오 캐시 (약 31MB)
+                "com.sec.android.app.launcher",        // 삼성 기본 런처
+                "com.android.settings",                // 설정 앱 캐시
+                "com.android.chrome",                  // 크롬 브라우저 캐시
+                "com.google.android.projection.gearhead", // 안드로이드 오토
                 "com.sktelecom.smartcard.SmartcardService",
                 "com.samsung.android.mobileservice",
                 "com.sec.android.diagmonagent",
@@ -491,10 +590,6 @@ public class FloatingService extends Service {
             }
         }
 
-        // 앱 내부 메모리 가비지 컬렉션(GC) 즉시 수행
-        System.gc();
-        Runtime.getRuntime().gc();
-
         final int totalCleaned = cleanedCount;
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             ActivityManager.MemoryInfo afterMem = new ActivityManager.MemoryInfo();
@@ -512,91 +607,42 @@ public class FloatingService extends Service {
     }
 
     private void setAppIcon(ImageView imageView, String packageName) {
-        try {
-            Drawable icon = getPackageManager().getApplicationIcon(packageName);
-            imageView.setImageDrawable(icon);
-        } catch (PackageManager.NameNotFoundException e) {
-            imageView.setImageResource(android.R.drawable.sym_def_app_icon);
-        }
+        AppLauncher.setAppIcon(getPackageManager(), imageView, packageName);
     }
 
-    private void launchApp(String packageName) {
-        if ("com.skt.tmap.ku".equals(packageName)) {
-            launchTmapSafeDriving();
-            return;
-        }
+    // 앱을 전체화면으로 단독 실행
+    private void launchAppFullScreen(String packageName) {
+        AppLauncher.launchApp(this, packageName);
+    }
 
-        Intent intent = getPackageManager().getLaunchIntentForPackage(packageName);
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+    // 채널 클릭 시 유튜브 전용앱 실행 (재생 중이어도 즉시 해당 채널로 전환)
+    private void launchYoutubeFullScreen(String url, String name) {
+        String displayName = (name != null ? name.replace("\n", " ") : "유튜브");
+        Toast.makeText(this, "📺 " + displayName + " 이동", Toast.LENGTH_SHORT).show();
+
+        if (BrowserActivity.currentInstance != null && !BrowserActivity.currentInstance.isFinishing()) {
+            BrowserActivity.currentInstance.openChannelUrl(url);
+            Intent intent = new Intent(this, BrowserActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
         } else {
-            Toast.makeText(this, "해당 앱이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this, BrowserActivity.class);
+            intent.putExtra("url", url);
+            intent.putExtra("channel_name", name);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
         }
     }
 
-    // 티맵 광고를 100% 건너뛰고 안심주행 화면으로 즉시 직행하는 다이렉트 런처
+    private void launchMainActivityFullScreen() {
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(mainIntent);
+    }
+
+    // 티맵 안심주행 직행
     private void launchTmapSafeDriving() {
-        try {
-            Intent directIntent = new Intent(Intent.ACTION_VIEW, android.net.Uri.parse("tmap://safe"));
-            directIntent.setPackage("com.skt.tmap.ku");
-            directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
-            SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-            boolean popupEnabled = prefs.getBoolean("tmap_popup_enabled", true);
-
-            if (popupEnabled) {
-                int left = prefs.getInt("tmap_popup_x", 1050);
-                int top = prefs.getInt("tmap_popup_y", 50);
-                int width = prefs.getInt("tmap_popup_w", 840);
-                int height = prefs.getInt("tmap_popup_h", 1100);
-
-                Rect bounds = new Rect(left, top, left + width, top + height);
-                ActivityOptions options = ActivityOptions.makeBasic();
-                options.setLaunchBounds(bounds);
-
-                try {
-                    Method method = ActivityOptions.class.getMethod("setLaunchWindowingMode", int.class);
-                    method.invoke(options, 5); // WINDOWING_MODE_FREEFORM = 5
-                } catch (Exception ignored) {}
-
-                startActivity(directIntent, options.toBundle());
-            } else {
-                startActivity(directIntent);
-            }
-            Toast.makeText(this, "🚗 티맵 안심주행으로 바로 실행합니다", Toast.LENGTH_SHORT).show();
-
-            boolean isMacroEnabled = prefs.getBoolean("tmap_macro_enabled", false);
-            if (isMacroEnabled) {
-                executeTmapMacro();
-            }
-        } catch (Exception e) {
-            try {
-                Intent fallback = getPackageManager().getLaunchIntentForPackage("com.skt.tmap.ku");
-                if (fallback != null) {
-                    fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(fallback);
-                } else {
-                    Toast.makeText(this, "티맵이 설치되어 있지 않습니다.", Toast.LENGTH_SHORT).show();
-                }
-            } catch (Exception ex) {
-                Toast.makeText(this, "티맵 실행 실패", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    private void executeTmapMacro() {
-        SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-        int macroCount = prefs.getInt("tmap_macro_count", 6);
-        if (macroCount <= 0) return;
-
-        float tmapX = prefs.getInt("tmap_x", 1130);
-        float tmapY = prefs.getInt("tmap_y", 70);
-        int intervalSec = prefs.getInt("tmap_macro_interval", 3);
-
-        if (MacroAccessibilityService.instance != null) {
-            MacroAccessibilityService.instance.scheduleTmapMacro(tmapX, tmapY, macroCount, intervalSec);
-        }
+        AppLauncher.launchTmapSafeDriving(this);
     }
 
     private void executeCloseAllAppsAndLockMacro() {
@@ -613,42 +659,14 @@ public class FloatingService extends Service {
         SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
         int iconSizePx = (int) (prefs.getInt("popup_icon_size", 80) * getResources().getDisplayMetrics().density);
 
-        List<String> channelNames = new ArrayList<>();
-        List<String> channelUrls = new ArrayList<>();
+        List<ChannelManager.ChannelItem> channels = ChannelManager.loadChannels(this);
 
-        String savedJson = prefs.getString("brave_channels", null);
-        if (savedJson != null) {
-            try {
-                JSONArray jsonArray = new JSONArray(savedJson);
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject obj = jsonArray.getJSONObject(i);
-                    channelNames.add(obj.getString("name"));
-                    channelUrls.add(obj.getString("url"));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        } else {
-            // 기본 권장 채널 프리셋
-            channelNames.add("실시간\n뉴스");
-            channelUrls.add("https://m.youtube.com/results?search_query=실시간+뉴스+라이브");
-
-            channelNames.add("실시간\n음악");
-            channelUrls.add("https://m.youtube.com/results?search_query=실시간+음악+라이브");
-
-            channelNames.add("유튜브\n홈");
-            channelUrls.add("https://m.youtube.com");
-
-            saveChannels(channelNames, channelUrls);
-        }
-
-        for (int i = 0; i < channelNames.size(); i++) {
+        for (int i = 0; i < channels.size(); i++) {
             final int index = i;
-            String name = channelNames.get(i);
-            String url = channelUrls.get(i);
+            ChannelManager.ChannelItem item = channels.get(i);
 
             TextView btnChannel = new TextView(this);
-            btnChannel.setText(formatChannelName(name));
+            btnChannel.setText(ChannelManager.formatChannelName(item.name));
             btnChannel.setTextColor(Color.WHITE);
             btnChannel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
             btnChannel.setGravity(Gravity.CENTER);
@@ -661,15 +679,12 @@ public class FloatingService extends Service {
             btnChannel.setLayoutParams(params);
 
             btnChannel.setOnClickListener(v -> {
-                Intent browserIntent = new Intent(this, BrowserActivity.class);
-                browserIntent.putExtra("url", url);
-                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                startActivity(browserIntent);
+                launchYoutubeFullScreen(item.url, item.name);
                 hideHandler.post(hideRunnable);
             });
 
             btnChannel.setOnLongClickListener(v -> {
-                showDeleteConfirmDialog(name, index, channelNames, channelUrls);
+                showDeleteConfirmDialog(item.name, index, channels);
                 return true;
             });
 
@@ -689,20 +704,12 @@ public class FloatingService extends Service {
         LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(iconSizePx, iconSizePx);
         btnAdd.setLayoutParams(addParams);
 
-        btnAdd.setOnClickListener(v -> showAddChannelDialog(channelNames, channelUrls));
+        btnAdd.setOnClickListener(v -> showAddChannelDialog(channels));
 
         channelContainer.addView(btnAdd);
     }
 
-    private String formatChannelName(String name) {
-        if (name == null || name.length() <= 3 || name.contains("\n")) {
-            return name;
-        }
-        int mid = (name.length() + 1) / 2;
-        return name.substring(0, mid) + "\n" + name.substring(mid);
-    }
-
-    private void showAddChannelDialog(List<String> channelNames, List<String> channelUrls) {
+    private void showAddChannelDialog(List<ChannelManager.ChannelItem> channels) {
         ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
         AlertDialog.Builder builder = new AlertDialog.Builder(contextThemeWrapper);
         builder.setTitle("새 유튜브 채널 바로가기 추가");
@@ -729,9 +736,8 @@ public class FloatingService extends Service {
                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                     url = "https://" + url;
                 }
-                channelNames.add(name);
-                channelUrls.add(url);
-                saveChannels(channelNames, channelUrls);
+                channels.add(new ChannelManager.ChannelItem(name, url));
+                ChannelManager.saveChannels(this, channels);
                 populateChannelButtons();
                 Toast.makeText(this, "'" + name + "' 채널이 추가되었습니다.", Toast.LENGTH_SHORT).show();
             } else {
@@ -749,17 +755,18 @@ public class FloatingService extends Service {
         dialog.show();
     }
 
-    private void showDeleteConfirmDialog(String name, int index, List<String> channelNames, List<String> channelUrls) {
+    private void showDeleteConfirmDialog(String name, int index, List<ChannelManager.ChannelItem> channels) {
         ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(this, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
         AlertDialog.Builder builder = new AlertDialog.Builder(contextThemeWrapper);
         builder.setTitle("채널 삭제");
         builder.setMessage("'" + name + "' 채널을 삭제하시겠습니까?");
         builder.setPositiveButton("삭제", (dialog, which) -> {
-            channelNames.remove(index);
-            channelUrls.remove(index);
-            saveChannels(channelNames, channelUrls);
-            populateChannelButtons();
-            Toast.makeText(this, "삭제되었습니다.", Toast.LENGTH_SHORT).show();
+            if (index >= 0 && index < channels.size()) {
+                channels.remove(index);
+                ChannelManager.saveChannels(this, channels);
+                populateChannelButtons();
+                Toast.makeText(this, "삭제되었습니다.", Toast.LENGTH_SHORT).show();
+            }
         });
         builder.setNegativeButton("취소", null);
 
@@ -771,30 +778,13 @@ public class FloatingService extends Service {
         dialog.show();
     }
 
-    private void saveChannels(List<String> names, List<String> urls) {
-        try {
-            JSONArray jsonArray = new JSONArray();
-            for (int i = 0; i < names.size(); i++) {
-                JSONObject obj = new JSONObject();
-                obj.put("name", names.get(i));
-                obj.put("url", urls.get(i));
-                jsonArray.put(obj);
-            }
-            SharedPreferences prefs = getSharedPreferences("CarHomePrefs", MODE_PRIVATE);
-            prefs.edit().putString("brave_channels", jsonArray.toString()).apply();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void onDestroy() {
+        instance = null;
         super.onDestroy();
         if (autoLaunchHandler != null) autoLaunchHandler.removeCallbacksAndMessages(null);
-        if (powerOffHandler != null) powerOffHandler.removeCallbacksAndMessages(null);
         if (powerDisconnectDebounceHandler != null) powerDisconnectDebounceHandler.removeCallbacksAndMessages(null);
         if (powerReceiver != null) { try { unregisterReceiver(powerReceiver); } catch (Exception e) {} }
-        if (settingsReceiver != null) { try { unregisterReceiver(settingsReceiver); } catch (Exception e) {} }
         if (hideHandler != null && hideRunnable != null) hideHandler.removeCallbacks(hideRunnable);
         if (floatingView != null) { try { windowManager.removeView(floatingView); } catch (Exception ignored) {} }
     }

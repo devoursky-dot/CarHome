@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.carhome">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -11,6 +10,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:allowBackup="true"
@@ -19,11 +19,13 @@
         android:label="CarHome"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:resizeableActivity="true"
         android:theme="@style/Theme.CarHome">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:resizeableActivity="false"
             android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,17 +36,20 @@
             </intent-filter>
         </activity>
 
-        <!-- 내장 브라우저 화면 등록 (하드웨어 가속, 회전/전원/테마 변경 시 새로고침 방지 및 키보드 자판 활성화) -->
+        <!-- 내장 브라우저 화면 등록 (독립 태스크 분리로 최근 앱 목록 표시, 다른 앱 전환 후 복귀 및 모두 닫기 완벽 지원) -->
         <activity
             android:name=".BrowserActivity"
+            android:label="유튜브 플레이어"
             android:exported="true"
-            android:launchMode="singleTask"
+            android:launchMode="singleTop"
+            android:taskAffinity="com.example.carhome.browser"
+            android:excludeFromRecents="false"
+            android:autoRemoveFromRecents="false"
             android:hardwareAccelerated="true"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
             android:windowSoftInputMode="adjustResize|stateHidden"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|keyboard|keyboardHidden|fontScale|density" />
-
-        <!-- CarHome 전용 설정 화면 등록 -->
-        <activity android:name=".SettingsActivity" android:exported="true" />
 
         <!-- 플로팅 화면을 띄워줄 서비스 등록 -->
         <service android:name=".FloatingService" />
@@ -62,16 +67,6 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
-        <!-- 티맵 안심주행 실시간 감지를 위한 알림 리스너 서비스 등록 -->
-        <service
-            android:name=".TmapNotificationListener"
-            android:label="CarHome 티맵 알림 감지 서비스"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
     </application>
 
 </manifest>

@@ -3,8 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#E6121212"
-    android:padding="24dp">
+    android:background="#F0121216"
+    android:padding="16dp">
 
     <!-- 상단 헤더: 타이틀, 검색창, 닫기 버튼 -->
     <LinearLayout
@@ -12,31 +12,47 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="12dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="📦 전체 앱"
             android:textColor="#FFFFFF"
-            android:textSize="28sp"
+            android:textSize="24sp"
             android:textStyle="bold"
-            android:layout_marginEnd="16dp" />
+            android:layout_marginEnd="12dp" />
 
         <EditText
             android:id="@+id/etSearchApp"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="46dp"
             android:layout_weight="1"
             android:background="@drawable/bg_dock_btn"
             android:hint="🔍 앱 이름 검색..."
             android:textColorHint="#888888"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:textSize="15sp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:singleLine="true"
             android:imeOptions="actionSearch" />
+
+        <TextView
+            android:id="@+id/btnCloseAppDrawer"
+            android:layout_width="wrap_content"
+            android:layout_height="46dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_dock_btn"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="✕ 닫기"
+            android:textColor="#FF5252"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
     </LinearLayout>
 
     <!-- 앱 아이콘 바둑판 그리드 (최신 RecyclerView) -->
@@ -45,6 +61,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
+        android:clipToPadding="false"
         android:scrollbars="vertical"
         android:overScrollMode="never" />
 </LinearLayout>

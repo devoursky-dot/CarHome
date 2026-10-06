@@ -2,7 +2,7 @@
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/floatingRoot"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 
     <!-- 실제 앱 아이콘 팝업 메뉴 (시간/날짜 제거 후 깔끔한 퀵 런처 카드) -->
@@ -10,6 +10,9 @@
         android:id="@+id/floatingContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
         android:orientation="vertical"
         android:background="@drawable/bg_floating_popup"
         android:paddingStart="20dp"

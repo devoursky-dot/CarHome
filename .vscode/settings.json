@@ -11,5 +11,6 @@
       "path": "C:\\Program Files\\Android\\Android Studio\\jbr"
     }
   ],
-  "java.jdt.ls.java.home": "C:\\Program Files\\Microsoft\\jdk-17.0.20.101-hotspot"
+  "java.jdt.ls.java.home": "C:\\Program Files\\Microsoft\\jdk-17.0.20.101-hotspot",
+  "java.configuration.updateBuildConfiguration": "automatic"
 }
